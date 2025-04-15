@@ -12,12 +12,12 @@ public class MqttConnector {
     private static MqttClient mqttClient;
     private static final String TAG = "MqttConnector";
     private static final String SERVER_URI = "tcp://218.49.196.80:1883"; //공인외부 아이피 설정
-    private static final String CLIENT_ID = "AndroidClient";
+    private static final String CLIENT_ID = "CozyDow";
 
     // MQTT 클라이언트 연결
-    public static void createMqttClient(String clientId) {
+    public static void createMqttClient() {
         try {
-            mqttClient = new MqttClient(SERVER_URI, clientId, null);
+            mqttClient = new MqttClient(SERVER_URI, CLIENT_ID, null);
             MqttConnectOptions options = new MqttConnectOptions();
             options.setCleanSession(true);
             mqttClient.connect(options);
