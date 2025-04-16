@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         openBtn.setOnClickListener(v -> {
             if(isConnect){
                 if(!isopen){
-                    String topic = "window";
+                    String topic = "window/motor_request";
                     String message = "open";
                     MqttConnector.publish(message, topic);
                     isopen = true;
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         closeBtn.setOnClickListener(v ->{
             if(isConnect){
                 if(isopen){
-                    String topic = "window";
+                    String topic = "window/motor_request";
                     String message = "close";
                     MqttConnector.publish(message, topic);
                     isopen = false;
