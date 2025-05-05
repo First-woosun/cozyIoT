@@ -4,18 +4,15 @@ import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import android.widget.*;
 
-import java.io.UnsupportedEncodingException;
+import android.widget.*;
 
 public class MainActivity extends AppCompatActivity {
     //안드로이드 세그먼트 선언
     Button connectBtn; Button disConnectBtn; Button openBtn; Button closeBtn;
     Switch autoSwitch;
     ImageView windowState;
+    TextView huminityView;
 
     //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
     private static boolean isConnect = false;
@@ -36,6 +33,13 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        connectBtn = findViewById(R.id.btn_connect);
+        disConnectBtn = findViewById(R.id.btn_disconnect);
+        openBtn = findViewById(R.id.btn_open);
+        closeBtn = findViewById(R.id.btn_close);
+        windowState = findViewById(R.id.window_state);
+        huminityView = findViewById(R.id.huminity_view);
+
         //습도를 받아오기 위한 스레드 메소드
         Thread huminityThread = new Thread(new Runnable() {
             @Override
@@ -43,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println("스레드 동작중");
                 while (multiThreadRun){
                     MqttConnector.subscribe("window/motor_request");
-                    huminity = MqttConnector.getLatestMassage();
-
+                    huminity = MqttConnector.getLatestMassage() + "%";
+                    runOnUiThread(() -> huminityView.setText(huminity));
                     System.out.println(huminity);
                     try {
                         Thread.sleep(2000);
@@ -55,12 +59,6 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println("멀티스레드 종료");
             }
         });
-
-        connectBtn = findViewById(R.id.btn_connect);
-        disConnectBtn = findViewById(R.id.btn_disconnect);
-        openBtn = findViewById(R.id.btn_open);
-        closeBtn = findViewById(R.id.btn_close);
-        windowState = findViewById(R.id.window_state);
 
         //현재 창문 상태에 따라 창문 이미지 설정
         if(!isopen){
