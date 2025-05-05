@@ -13,6 +13,7 @@ public class MqttConnector {
     private static final String TAG = "MqttConnector";
     private static final String SERVER_URI = "tcp://218.49.196.80:1883"; //공인외부 아이피 설정
     private static final String CLIENT_ID = "CozyDow";
+    private static String latestMassage = null;
 
     // MQTT 클라이언트 연결
     public static void createMqttClient() {
@@ -33,6 +34,7 @@ public class MqttConnector {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     Log.d(TAG, "Message arrived: " + message.toString());
+                    latestMassage = message.toString();
                 }
 
                 @Override
@@ -84,5 +86,9 @@ public class MqttConnector {
                 Log.e(TAG, "Failed to disconnect", e);
             }
         }
+    }
+
+    public static String getLatestMassage(){
+        return latestMassage;
     }
 }
