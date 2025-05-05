@@ -15,9 +15,11 @@ public class MainActivity extends AppCompatActivity {
     TextView huminityView;
 
     //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
+    //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
     private static boolean isConnect = false;
 
     //창문의 현재 상태를 파악하는 flag (추후 수정)
+    //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
     private static boolean isopen = false;
 
     //습도 데이터 처리를 위한 멀티스레드 작동 flag
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //현재 창문 상태에 따라 창문 이미지 설정
+        //TODO 서버에 저장된 window status 값을 읽어와 업데이트 하도록 수정
         if(!isopen){
             windowState.setImageResource(R.drawable.window_status_close);
         } else {
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //MQTT 클라이언트 생성 버튼
+        //TODO 클라이언트 연결은 기기 추가로 이전하고 서버에서 연결된 장치 정보를 읽어와 커넥터를 생성하는 방식으로 수정
         connectBtn.setOnClickListener(v ->{
             if(!isConnect){
                 MqttConnector.createMqttClient();
@@ -112,13 +116,13 @@ public class MainActivity extends AppCompatActivity {
                 isConnect = true;
                 multiThreadRun = true;
                 huminityThread.start();
-//                System.out.println(MqttConnector.getLatestMassage());
             } else {
                 Toast.makeText(this, "이미 연결되어 있습니다.", Toast.LENGTH_SHORT).show();
             }
         });
 
         //MQTT 클라이언트 제거 버튼
+        //TODO 클라이언트 제거는 장치 연결 해제로 이전
         disConnectBtn.setOnClickListener(v ->{
             MqttConnector.disconnect();
             Toast.makeText(this, "연결을 해제했습니다.", Toast.LENGTH_SHORT).show();
