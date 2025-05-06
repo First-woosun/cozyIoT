@@ -7,6 +7,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.widget.*;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class MainActivity extends AppCompatActivity {
     //안드로이드 세그먼트 선언
     Button connectBtn; Button disConnectBtn; Button openBtn; Button closeBtn;
@@ -28,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
     //습도 데이터를 저장할 변수
     private static String huminity;
 
+    //온도 데이터를 저장할 변수
+    private static String temperature;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,10 +54,24 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 System.out.println("스레드 동작중");
                 while (multiThreadRun){
-                    MqttConnector.subscribe("window/motor_request");
-                    huminity = MqttConnector.getLatestMassage() + "%";
-                    runOnUiThread(() -> huminityView.setText(huminity));
-                    System.out.println(huminity);
+                    MqttConnector.subscribe("pico/dht22");
+                    String JsonMessage = MqttConnector.getLatestMassage();
+
+                    try{
+                        JSONObject jsonObject = new JSONObject(JsonMessage);
+                        temperature = jsonObject.getString("temp");
+                        huminity =  jsonObject.getString("hum") + "%";
+
+                        runOnUiThread(() -> huminityView.setText(huminity));
+
+                    } catch (JSONException e) {
+//                        e.printStackTrace();
+                        runOnUiThread(() -> huminityView.setText("데이터 오류"));
+                    } catch (NullPointerException e){
+//                        e.printStackTrace();
+                        runOnUiThread(() -> huminityView.setText("0%"));
+                    }
+
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
