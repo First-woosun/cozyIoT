@@ -1,4 +1,4 @@
-package com.example.cozyiot;
+package com.example.cozyiot.func;
 
 import android.util.Log;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -11,16 +11,19 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 public class MqttConnector {
     private static MqttClient mqttClient;
     private static final String TAG = "MqttConnector";
-    private static final String SERVER_URI = "tcp://218.49.196.80:1883"; //공인외부 아이피 설정
-    private static final String CLIENT_ID = "CozyDow";
+//    private static final String SERVER_URI = "tcp://218.49.196.80:1883"; //공인외부 아이피 설정
+
     private static String latestMassage = null;
 
     // MQTT 클라이언트 연결
-    public static void createMqttClient() {
+    public static boolean createMqttClient(String IPAddress ,String CLIENT_ID, String CLIENT_PASSWORD) {
         try {
+            String SERVER_URI = "tcp://" + IPAddress;
             mqttClient = new MqttClient(SERVER_URI, CLIENT_ID, null);
             MqttConnectOptions options = new MqttConnectOptions();
             options.setCleanSession(true);
+            options.setUserName(CLIENT_ID);
+            options.setPassword(CLIENT_PASSWORD.toCharArray());
             mqttClient.connect(options);
             Log.d(TAG, "Connected to MQTT broker");
 
@@ -42,8 +45,10 @@ public class MqttConnector {
                     Log.d(TAG, "Delivery complete");
                 }
             });
+            return true;
         } catch (MqttException e) {
             Log.e(TAG, "Failed to connect to MQTT broker", e);
+            return false;
         }
     }
 
