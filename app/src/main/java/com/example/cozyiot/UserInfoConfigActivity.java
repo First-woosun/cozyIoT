@@ -1,0 +1,91 @@
+package com.example.cozyiot;
+
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+
+
+public class UserInfoConfigActivity extends AppCompatActivity {
+
+    private SharedPreferences preferences;
+
+    EditText userNameInput; EditText userPasswordInput; EditText wifiNameInput; EditText wifiPasswordInput; EditText IPAddressInput;
+    Button saveBtn; Button resetBtn;
+
+    private static String userName;
+    private static String userPassword;
+    private static String wifiName;
+    private static String wifiPassword;
+    private static String IPAddress;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_user_info_config);
+
+        userNameInput = findViewById(R.id.edit_username);
+        userPasswordInput = findViewById(R.id.edit_password);
+        wifiNameInput = findViewById(R.id.edit_wifiname);
+        wifiPasswordInput = findViewById(R.id.edit_wifipassword);
+        IPAddressInput = findViewById(R.id.edit_IPAddress);
+        saveBtn = findViewById(R.id.btn_save);
+        resetBtn = findViewById(R.id.btn_reset);
+
+        preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+
+        // 기존에 저장된 정보가 있다면 Edittext에 표시
+        if(!preferences.getAll().isEmpty()){
+            userNameInput.setText(preferences.getString("userName", ""));
+            userPasswordInput.setText(preferences.getString("userPassword", ""));
+            wifiNameInput.setText(preferences.getString("wifiName", ""));
+            wifiPasswordInput.setText(preferences.getString("wifiPassword", ""));
+            IPAddressInput.setText(preferences.getString("IPAddress",""));;
+        }
+
+        //사용자 정보 저장 버튼
+        saveBtn.setOnClickListener(v -> {
+            userName = userNameInput.getText().toString();
+            userPassword = userPasswordInput.getText().toString();
+            wifiName = wifiNameInput.getText().toString();
+            wifiPassword = wifiPasswordInput.getText().toString();
+            IPAddress = IPAddressInput.getText().toString();
+
+            boolean NameFlag = userName.isEmpty();
+            boolean passwordFlag = userPassword.isEmpty();
+            boolean wifiNameFlag = wifiName.isEmpty();
+            boolean wifiPasswordFlag = wifiPassword.isEmpty();
+            boolean IPAddressFlag = IPAddress.isEmpty();
+
+            if(!NameFlag && !passwordFlag && !wifiNameFlag && !wifiPasswordFlag && !IPAddressFlag){
+                editor.putString("userName", userName);
+                editor.putString("userPassword", userPassword);
+                editor.putString("wifiName", wifiName);
+                editor.putString("wifiPassword", wifiPassword);
+                editor.putString("IPAddress", IPAddress);
+                editor.apply();
+                Toast.makeText(this, "저장 완료", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 사용자 정보 초기화 버튼
+        resetBtn.setOnClickListener(v -> {
+            editor.clear();
+            editor.apply();
+
+            userNameInput.setText("");
+            userPasswordInput.setText("");
+            wifiNameInput.setText("");
+            wifiPasswordInput.setText("");
+            IPAddressInput.setText("");
+        });
+    }
+}
