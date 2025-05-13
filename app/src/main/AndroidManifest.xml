@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SET_ALARM" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
 
     <application
         android:allowBackup="true"
@@ -22,9 +25,7 @@
             android:exported="false" />
         <activity
             android:name=".windowControllerActivity"
-            android:exported="false" /> <!-- <activity -->
-        <!-- android:name=".module_control_activity" -->
-        <!-- android:exported="false" /> -->
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -34,8 +35,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MapActivity"
+            android:exported="false" />
 
         <service android:name="org.eclipse.paho.android.service.MqttService" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBDbIW-6z_UxBBiRzJ-5JXqJi8T8MLMFOU" />
     </application>
 
 </manifest>

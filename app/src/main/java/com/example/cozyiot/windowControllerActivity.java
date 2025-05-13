@@ -140,7 +140,7 @@ public class windowControllerActivity extends AppCompatActivity {
                         }
 
                         try {
-                            Thread.sleep(2000);
+                            Thread.sleep(60000);
                         } catch (InterruptedException e) {
                             break;
                         }
