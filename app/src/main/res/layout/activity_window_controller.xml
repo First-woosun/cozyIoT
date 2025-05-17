@@ -23,6 +23,18 @@
         app:layout_constraintTop_toTopOf="parent"
         android:contentDescription="뒤로가기" />
 
+    <android.widget.Button
+        android:id="@+id/btn_confirm_location"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="장치 위치 설정"
+        android:textSize="14sp"
+        android:background="@drawable/btn_effect"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Window Illustration (2 rectangles) -->
 
     <!-- Auto Label and Switch with Icon -->
