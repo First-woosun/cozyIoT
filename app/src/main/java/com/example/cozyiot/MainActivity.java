@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
                 if(connectFlag){
                     startActivity(new Intent(MainActivity.this, windowControllerActivity.class));
                 } else {
-                    Toast.makeText(MainActivity.this, "연결에 실패했습니다. 사용자 정보를 확인해주십시오.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "연결에 실패했습니다.", Toast.LENGTH_SHORT).show();
                     Log.d("ConnectionFlag", "잘못된 사용자 정보");
                 }
 

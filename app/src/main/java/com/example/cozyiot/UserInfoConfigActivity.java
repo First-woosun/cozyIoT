@@ -9,6 +9,8 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.cozyiot.func.MqttConnector;
+
 
 public class UserInfoConfigActivity extends AppCompatActivity {
 
@@ -71,6 +73,17 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 editor.putString("IPAddress", IPAddress);
                 editor.apply();
                 Toast.makeText(this, "저장 완료", Toast.LENGTH_SHORT).show();
+
+                //사용자 정보를 서버에 전송
+                MqttConnector.createMqttClient(IPAddress, userName, userPassword);
+                MqttConnector.publish(userName, "userInfo/name");
+                MqttConnector.publish(userPassword, "userInfo/password");
+                MqttConnector.publish(wifiName, "userInfo/wifiName");
+                MqttConnector.publish(wifiPassword, "userInfo/wifiPassword");
+                MqttConnector.publish(IPAddress, "userInfo/IPAddress");
+                MqttConnector.publish("save", "userInfo/config");
+                MqttConnector.disconnect();
+
             } else {
                 Toast.makeText(this, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show();
             }
@@ -78,14 +91,21 @@ public class UserInfoConfigActivity extends AppCompatActivity {
 
         // 사용자 정보 초기화 버튼
         resetBtn.setOnClickListener(v -> {
-            editor.clear();
-            editor.apply();
+            if(!preferences.getAll().isEmpty()){
+                editor.clear();
+                editor.apply();
 
-            userNameInput.setText("");
-            userPasswordInput.setText("");
-            wifiNameInput.setText("");
-            wifiPasswordInput.setText("");
-            IPAddressInput.setText("");
+                userNameInput.setText("");
+                userPasswordInput.setText("");
+                wifiNameInput.setText("");
+                wifiPasswordInput.setText("");
+                IPAddressInput.setText("");
+
+                MqttConnector.createMqttClient(IPAddress, userName, userPassword);
+                MqttConnector.publish("reset", "userInfo/config");
+            } else {
+                Toast.makeText(this, "저장된 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }
