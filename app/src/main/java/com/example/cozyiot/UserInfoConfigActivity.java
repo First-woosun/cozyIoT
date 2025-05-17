@@ -75,7 +75,7 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 Toast.makeText(this, "저장 완료", Toast.LENGTH_SHORT).show();
 
                 //사용자 정보를 서버에 전송
-                MqttConnector.createMqttClient(IPAddress, userName, userPassword);
+                MqttConnector.createMqttClient("218.49.196.80:1883", "cozydow", "1234");
                 MqttConnector.publish(userName, "userInfo/name");
                 MqttConnector.publish(userPassword, "userInfo/password");
                 MqttConnector.publish(wifiName, "userInfo/wifiName");
@@ -101,8 +101,10 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 wifiPasswordInput.setText("");
                 IPAddressInput.setText("");
 
-                MqttConnector.createMqttClient(IPAddress, userName, userPassword);
-                MqttConnector.publish("reset", "userInfo/config");
+                MqttConnector.createMqttClient("218.49.196.80:1883", "cozydow", "1234");
+                MqttConnector.publish("reset:" , "userInfo/config");
+                MqttConnector.publish("userName:" , "userInfo/name");
+
             } else {
                 Toast.makeText(this, "저장된 정보가 없습니다.", Toast.LENGTH_SHORT).show();
             }
