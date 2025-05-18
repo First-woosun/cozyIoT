@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -17,7 +18,7 @@ public class UserInfoConfigActivity extends AppCompatActivity {
     private SharedPreferences preferences;
 
     EditText userNameInput; EditText userPasswordInput; EditText wifiNameInput; EditText wifiPasswordInput; EditText IPAddressInput;
-    Button saveBtn; Button resetBtn;
+    Button saveBtn; Button resetBtn; TextView backBtn;
 
     private static String userName;
     private static String userPassword;
@@ -38,6 +39,7 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         IPAddressInput = findViewById(R.id.edit_IPAddress);
         saveBtn = findViewById(R.id.btn_save);
         resetBtn = findViewById(R.id.btn_reset);
+        backBtn = findViewById(R.id.btn_back);
 
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -108,6 +110,10 @@ public class UserInfoConfigActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "저장된 정보가 없습니다.", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        backBtn.setOnClickListener(v -> {
+            finish();
         });
     }
 }
