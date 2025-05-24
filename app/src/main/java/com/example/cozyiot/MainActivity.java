@@ -14,7 +14,9 @@ import com.example.cozyiot.func.MqttConnector;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button userInfoConfig; Button windowControl;
+    Button loginBtn; Button signUpBtn;
+    TextView userNameInput; TextView passwordInput;
+
     SharedPreferences preferences;
 
     private static boolean connectFlag;
@@ -25,33 +27,53 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        loginBtn = findViewById(R.id.buttonLogin);
+        signUpBtn = findViewById(R.id.buttonSignup);
+        userNameInput = findViewById(R.id.editTextUsername);
+        passwordInput = findViewById(R.id.editTextPassword);
+
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
 
-        userInfoConfig = findViewById(R.id.user_config);
-        windowControl = findViewById(R.id.window_control);
+        if(!preferences.getAll().isEmpty()){
+            String name = preferences.getString("userName", "");
+            String pass = preferences.getString("userPassword", "");
+            String address = preferences.getString("IPAddress", "");
 
-        userInfoConfig.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, UserInfoConfigActivity.class));
+            connectFlag = MqttConnector.createMqttClient(address, name, pass);
+            MqttConnector.disconnect();
+
+            if(connectFlag){
+                Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
+                Log.d("Auto Login", "connecting Success");
+                startActivity(new Intent(MainActivity.this, tempMainActivity.class));
+                finish();
+            } else {
+                Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
+                Log.e("Auto Login", "Connecting Error");
+            }
+        }
+
+        loginBtn.setOnClickListener(v -> {
+            String nameInput = userNameInput.getText().toString();
+            String passInput = passwordInput.getText().toString();
+            String address = preferences.getString("IPAddress", "");
+
+            connectFlag = MqttConnector.createMqttClient(address, nameInput, passInput);
+            MqttConnector.disconnect();
+
+            if(connectFlag){
+                Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
+                Log.d("Login", "Login Success");
+                startActivity(new Intent(MainActivity.this, tempMainActivity.class));
+                finish();
+            } else {
+                Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show();
+                Log.e("Login", "Login Fail");
+            }
         });
 
-        windowControl.setOnClickListener(v -> {
-            if(!preferences.getAll().isEmpty()){
-                String userName = preferences.getString("userName", "");
-                String userPassword = preferences.getString("userPassword", "");
-                String IPAddress = preferences.getString("IPAddress", "");
-                connectFlag = MqttConnector.createMqttClient(IPAddress ,userName, userPassword);
-                MqttConnector.disconnect();
-                if(connectFlag){
-                    startActivity(new Intent(MainActivity.this, windowControllerActivity.class));
-                } else {
-                    Toast.makeText(MainActivity.this, "연결에 실패했습니다.", Toast.LENGTH_SHORT).show();
-                    Log.d("ConnectionFlag", "잘못된 사용자 정보");
-                }
-
-            } else {
-                Toast.makeText(MainActivity.this, "사용자 정보가 등록되어 있지 않습니다.\n등록 후 다시 시도해주세요.", Toast.LENGTH_SHORT).show();
-                Log.e("userInfo", "사용자 정보 미기입");
-            }
+        signUpBtn.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, UserInfoConfigActivity.class));
         });
     }
 }
