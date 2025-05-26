@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
             if(connectFlag){
                 Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
                 Log.d("Auto Login", "connecting Success");
-                startActivity(new Intent(MainActivity.this, tempMainActivity.class));
+                startActivity(new Intent(MainActivity.this, HomeActivity.class));
                 finish();
             } else {
                 Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
             if(connectFlag){
                 Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
                 Log.d("Login", "Login Success");
-                startActivity(new Intent(MainActivity.this, tempMainActivity.class));
+                startActivity(new Intent(MainActivity.this, HomeActivity.class));
                 finish();
             } else {
                 Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show();
