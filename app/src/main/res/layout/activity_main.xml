@@ -9,6 +9,7 @@
     android:background="#FFF7E6"
     tools:context=".tempMainActivity">
 
+
     <ImageView
         android:id="@+id/backgroundImage"
         android:layout_width="0dp"

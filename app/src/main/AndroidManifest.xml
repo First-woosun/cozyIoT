@@ -20,7 +20,7 @@
         android:theme="@style/Theme.CozyIoT"
         tools:targetApi="31" >
         <activity
-            android:name=".tempMainActivity"
+            android:name=".HomeActivity"
             android:exported="false" />
         <activity
             android:name=".UserInfoConfigActivity"
