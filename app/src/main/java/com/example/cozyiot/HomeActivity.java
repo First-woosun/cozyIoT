@@ -1,11 +1,16 @@
 package com.example.cozyiot;
 
 import com.example.cozyiot.Machine.*;
+
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -13,18 +18,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.widget.*;
 
 import com.example.cozyiot.func.MqttConnector;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private ImageButton sidebarBtn;
     private ImageButton machineAddBtn;
+
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private ActionBarDrawerToggle toggle;
+    private ImageButton sidebarBtn;
+
     private RecyclerView recyclerView;
     private machineDataAdapter machineDataAdapter;
     private List<machineData> machineDataList;
-
 
     private SharedPreferences preferences;
 
@@ -44,6 +55,8 @@ public class HomeActivity extends AppCompatActivity {
 
         MqttConnector.createMqttClient(Address, Name, Password);
 
+        machineAddBtn = findViewById(R.id.btn_add_item);
+
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
@@ -52,5 +65,55 @@ public class HomeActivity extends AppCompatActivity {
 
         machineDataAdapter = new machineDataAdapter(HomeActivity.this, machineDataList);
         recyclerView.setAdapter(machineDataAdapter);
+
+        machineAddBtn.setOnClickListener(v -> {
+            machineDataList.add(new machineData("기기 추가 예시"));
+            recyclerView.setAdapter(machineDataAdapter);
+        });
+
+
+        sidebarBtn = findViewById(R.id.btn_sidebar);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.navigation_view);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+
+        setSupportActionBar(toolbar);
+
+        toggle = new ActionBarDrawerToggle(
+                this,
+                drawerLayout,
+                toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+        sidebarBtn.setOnClickListener(v -> {
+            if(!drawerLayout.isDrawerOpen(GravityCompat.END)){
+                drawerLayout.openDrawer(GravityCompat.END);
+            }
+        });
+
+        navigationView.setNavigationItemSelectedListener(menuItem -> {
+            int id = menuItem.getItemId();
+            if(id == R.id.nav_user_info_config){
+                startActivity(new Intent(this, UserInfoConfigActivity.class));
+            } else if (id == R.id.nav_logout){
+                startActivity(new Intent(this, MainActivity.class));
+                finish();
+            }
+            drawerLayout.closeDrawer(GravityCompat.END);
+            return true;
+        });
+    }
+
+    @Override
+    public void onBackPressed(){
+        if(drawerLayout.isDrawerOpen(GravityCompat.END)){
+            drawerLayout.closeDrawer(GravityCompat.END);;
+        }else{
+            super.onBackPressed();
+        }
     }
 }

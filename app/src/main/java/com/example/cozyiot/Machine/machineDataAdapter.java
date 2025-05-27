@@ -49,6 +49,21 @@ public class machineDataAdapter extends RecyclerView.Adapter<machineDataAdapter.
             Intent intent = new Intent(context, windowControllerActivity.class);
             context.startActivity(intent);
         });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            remove(holder.getAbsoluteAdapterPosition());
+
+            return true;
+        });
+    }
+
+    public void remove(int position){
+        try{
+            machineDataList.remove(position);
+            notifyItemRemoved(position);
+        } catch (IndexOutOfBoundsException e){
+            e.printStackTrace();
+        }
     }
 
     @Override
