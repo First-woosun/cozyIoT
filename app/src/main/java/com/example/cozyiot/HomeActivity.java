@@ -76,14 +76,14 @@ public class HomeActivity extends AppCompatActivity {
         sidebarBtn = findViewById(R.id.btn_sidebar);
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.navigation_view);
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+//        MaterialToolbar toolbar = findViewById(R.id.toolbar);
 
-        setSupportActionBar(toolbar);
+//        setSupportActionBar(toolbar);
 
         toggle = new ActionBarDrawerToggle(
                 this,
                 drawerLayout,
-                toolbar,
+//                toolbar,
                 R.string.navigation_drawer_open,
                 R.string.navigation_drawer_close
         );

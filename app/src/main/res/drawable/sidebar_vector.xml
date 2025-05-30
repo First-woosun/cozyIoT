@@ -5,11 +5,6 @@
     android:viewportWidth="128"
     android:viewportHeight="128">
 
-    <!-- 흰 배경 -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M0,0h128v128h-128z" />
-
     <!-- 가로 막대 -->
     <path
         android:fillColor="#03A9F4"
