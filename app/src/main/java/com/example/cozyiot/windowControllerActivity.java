@@ -29,14 +29,14 @@ public class windowControllerActivity extends AppCompatActivity {
 
     //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
     //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
-    private static boolean isConnect = false;
+    private static boolean isConnect;
 
     //창문의 현재 상태를 파악하는 flag (추후 수정)
     //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
-    private static boolean isopen = false;
+    private static boolean isopen;
 
     //습도 데이터 처리를 위한 멀티스레드 작동 flag
-    private static boolean multiThreadRun = false;
+    private static boolean multiThreadRun;
 
     //습도 데이터를 저장할 변수
     private static String huminity;
@@ -58,6 +58,37 @@ public class windowControllerActivity extends AppCompatActivity {
             IPAddress = preferences.getString("IPAddress", "");
         }
 
+        isConnect = MqttConnector.createMqttClient(IPAddress, userName, userPassword);
+        if(isConnect){
+            Thread huminityThread = new Thread(() -> {
+                Log.i("multiThread", "start multiThread");
+                while (multiThreadRun) {
+                    MqttConnector.subscribe("pico/dht22");
+                    String JsonMessage = MqttConnector.getLatestMassage();
+
+                    try {
+                        JSONObject jsonObject = new JSONObject(JsonMessage);
+                        temperature = jsonObject.getString("temp");
+                        huminity = jsonObject.getString("hum") + "%";
+
+                        runOnUiThread(() -> huminityView.setText(huminity));
+                    } catch (JSONException e) {
+                        runOnUiThread(() -> huminityView.setText("데이터 오류"));
+                    } catch (NullPointerException e) {
+                        runOnUiThread(() -> huminityView.setText("0%"));
+                    }
+
+                    try {
+                        Thread.sleep(60000);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+                Log.i("multiThread", "exit multiThread successfully");
+            });
+            huminityThread.start(); // 새 스레드를 시작
+        }
+
         connectBtn = findViewById(R.id.btn_connect);
         disConnectBtn = findViewById(R.id.btn_disconnect);
         openBtn = findViewById(R.id.btn_open);
@@ -73,6 +104,36 @@ public class windowControllerActivity extends AppCompatActivity {
         } else {
             windowState.setImageResource(R.drawable.window_status_open);
         }
+
+        MqttConnector.subscribe("window/auto_motor_request");
+        String autoFlag = MqttConnector.getLatestMassage();
+        try {
+            if(autoFlag.equals("true")){
+                autoSwitch.setChecked(true);
+            } else if(autoFlag.equals("false")){
+                autoSwitch.setChecked(false);
+            } else {
+                Log.d("auto", "ERROR");
+            }
+        } catch (NullPointerException nullPointerException) {
+            autoSwitch.setChecked(false);
+        }
+
+        //창문 자동 제어
+        autoSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    String topic = "window/auto_motor_request";
+                    String message = "true";
+                    MqttConnector.publish(message, topic);
+                }else{
+                    String topic = "window/auto_motor_request";
+                    String message = "false";
+                    MqttConnector.publish(message, topic);
+                }
+            }
+        });
 
         //창문 개방 버튼
         openBtn.setOnClickListener(v -> {
@@ -111,50 +172,6 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         });
 
-        //MQTT 클라이언트 생성 버튼
-        //TODO 클라이언트 연결은 기기 추가로 이전하고 서버에서 연결된 장치 정보를 읽어와 커넥터를 생성하는 방식으로 수정
-        connectBtn.setOnClickListener(v -> {
-            if (!isConnect) {
-                MqttConnector.createMqttClient(IPAddress, userName, userPassword);
-                Toast.makeText(this, "연결되었습니다.", Toast.LENGTH_SHORT).show();
-                isConnect = true;
-                multiThreadRun = true;
-
-                // dht22의 데이터를 받기 위한 Thread 생성
-                Thread huminityThread = new Thread(() -> {
-                    Log.i("multiThread", "start multiThread");
-                    while (multiThreadRun) {
-                        MqttConnector.subscribe("pico/dht22");
-                        String JsonMessage = MqttConnector.getLatestMassage();
-
-                        try {
-                            JSONObject jsonObject = new JSONObject(JsonMessage);
-                            temperature = jsonObject.getString("temp");
-                            huminity = jsonObject.getString("hum") + "%";
-
-                            runOnUiThread(() -> huminityView.setText(huminity));
-                        } catch (JSONException e) {
-                            runOnUiThread(() -> huminityView.setText("데이터 오류"));
-                        } catch (NullPointerException e) {
-                            runOnUiThread(() -> huminityView.setText("0%"));
-                        }
-
-                        try {
-                            Thread.sleep(60000);
-                        } catch (InterruptedException e) {
-                            break;
-                        }
-                    }
-                    Log.i("multiThread", "exit multiThread successfully");
-                });
-
-                huminityThread.start(); // 새 스레드를 시작
-            } else {
-                Toast.makeText(this, "이미 연결되어 있습니다.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
         //MQTT 클라이언트 제거 버튼
         //TODO 클라이언트 제거는 장치 연결 해제로 이전
         disConnectBtn.setOnClickListener(v ->{
@@ -167,6 +184,14 @@ public class windowControllerActivity extends AppCompatActivity {
         //뒤로가기 버튼
         backBtn.setOnClickListener(v ->{
             finish();
+            MqttConnector.disconnect();
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        MqttConnector.disconnect();
+        multiThreadRun = false;
     }
 }
