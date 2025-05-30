@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
 
+        //자동 로그인 로직
         if(!preferences.getAll().isEmpty()){
             String name = preferences.getString("userName", "");
             String pass = preferences.getString("userPassword", "");
@@ -53,11 +54,11 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("Auto Login", "Connecting Error");
                 }
             } else {
-
+                Toast.makeText(this, "자동 로그인 실패", Toast.LENGTH_SHORT).show();
             }
-
         }
 
+        // 사용자 로그인 로직
         loginBtn.setOnClickListener(v -> {
             String nameInput = userNameInput.getText().toString();
             String passInput = passwordInput.getText().toString();
@@ -80,8 +81,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        //회원가입 버튼
         signUpBtn.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, UserInfoConfigActivity.class));
+            startActivity(new Intent(MainActivity.this, signUpActivity.class));
         });
     }
 }
