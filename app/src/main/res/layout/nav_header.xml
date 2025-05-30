@@ -2,22 +2,34 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="100dp"
-    android:background="#A4D3E3"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#00000000">
 
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:gravity="center">
 
         <TextView
             android:id="@+id/sidebar_Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="25dp"
             android:text="Menu"
-            android:textSize="35dp"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"/>
+            android:textSize="35sp"
+            android:layout_marginTop="16dp"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:gravity="center"/>
+
+        <ImageView
+            android:id="@+id/sidebar_logo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/ic_app_logo"
+            android:contentDescription="Sidebar Logo"
+            android:adjustViewBounds="true" />
+
     </LinearLayout>
 </com.google.android.material.navigation.NavigationView>

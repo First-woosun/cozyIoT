@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
+    android:background="@drawable/background"
     tools:context=".MainActivity">
 
     <RelativeLayout
@@ -79,13 +80,41 @@
 
     </RelativeLayout>
 
-    <!-- 사이드 네비게이션 뷰 -->
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/navigation_view"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="end"
-        app:menu="@menu/nav_menu"
-        app:headerLayout="@layout/nav_header"/>
+        android:orientation="vertical"
+        android:background="@drawable/background_sidebar">
 
+        <com.google.android.material.navigation.NavigationView
+            android:id="@+id/navigation_view"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            app:headerLayout="@layout/nav_header"
+            app:menu="@menu/nav_menu"
+            app:itemIconTint="@color/nav_icon_color"
+            app:itemTextColor="@color/nav_icon_color" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground">
+
+            <TextView
+                android:id="@+id/nav_logout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="로그아웃"
+                android:textColor="@color/nav_icon_color"
+                android:textSize="16sp" />
+        </LinearLayout>
+
+    </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static boolean connectFlag;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,19 +39,23 @@ public class MainActivity extends AppCompatActivity {
             String name = preferences.getString("userName", "");
             String pass = preferences.getString("userPassword", "");
             String address = preferences.getString("IPAddress", "");
-
+            boolean autoLogin = preferences.getBoolean("autoLogin", false);
             connectFlag = MqttConnector.createMqttClient(address, name, pass);
             MqttConnector.disconnect();
-
-            if(connectFlag){
-                Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
-                Log.d("Auto Login", "connecting Success");
-                startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                finish();
+            if (autoLogin) {
+                if(connectFlag){
+                    Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
+                    Log.d("Auto Login", "connecting Success");
+                    startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                    finish();
+                } else {
+                    Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
+                    Log.e("Auto Login", "Connecting Error");
+                }
             } else {
-                Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
-                Log.e("Auto Login", "Connecting Error");
+
             }
+
         }
 
         loginBtn.setOnClickListener(v -> {
@@ -63,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
 
             if(connectFlag){
                 Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean("autoLogin", true); // 자동 로그인 설정
+                editor.apply();
                 Log.d("Login", "Login Success");
                 startActivity(new Intent(MainActivity.this, HomeActivity.class));
                 finish();

@@ -35,6 +35,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private machineDataAdapter machineDataAdapter;
+    private TextView navLogout;
     private List<machineData> machineDataList;
 
     private SharedPreferences preferences;
@@ -99,12 +100,17 @@ public class HomeActivity extends AppCompatActivity {
             int id = menuItem.getItemId();
             if(id == R.id.nav_user_info_config){
                 startActivity(new Intent(this, UserInfoConfigActivity.class));
-            } else if (id == R.id.nav_logout){
-                startActivity(new Intent(this, MainActivity.class));
-                finish();
             }
             drawerLayout.closeDrawer(GravityCompat.END);
             return true;
+        });
+        navLogout = findViewById(R.id.nav_logout)   ;
+        navLogout.setOnClickListener(v -> {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean("autoLogin", false); // 여기서 자동로그인 끄기
+            editor.apply();
+            startActivity(new Intent(this, MainActivity.class));
+            finish();
         });
     }
 
