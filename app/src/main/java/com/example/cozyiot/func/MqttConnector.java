@@ -94,6 +94,7 @@ public class MqttConnector {
     }
 
     public static String getLatestMassage(){
+
         return latestMassage;
     }
 }
