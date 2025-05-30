@@ -17,9 +17,10 @@ public class MainActivity extends AppCompatActivity {
     Button loginBtn; Button signUpBtn;
     TextView userNameInput; TextView passwordInput;
 
-    SharedPreferences preferences;
+    SharedPreferences preferences;;
 
     private static boolean connectFlag;
+    private static boolean autoLoginFlag;
 
 
     @Override
@@ -34,27 +35,30 @@ public class MainActivity extends AppCompatActivity {
         passwordInput = findViewById(R.id.editTextPassword);
 
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
+        autoLoginFlag = preferences.getBoolean("autoLogin", false);
 
         //자동 로그인 로직
-        if(!preferences.getAll().isEmpty()){
-            String name = preferences.getString("userName", "");
-            String pass = preferences.getString("userPassword", "");
-            String address = preferences.getString("IPAddress", "");
-            boolean autoLogin = preferences.getBoolean("autoLogin", false);
-            connectFlag = MqttConnector.createMqttClient(address, name, pass);
-            MqttConnector.disconnect();
-            if (autoLogin) {
-                if(connectFlag){
-                    Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
-                    Log.d("Auto Login", "connecting Success");
-                    startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                    finish();
+        if(autoLoginFlag){
+            if(!preferences.getAll().isEmpty()){
+                String name = preferences.getString("userName", "");
+                String pass = preferences.getString("userPassword", "");
+                String address = preferences.getString("IPAddress", "");
+                boolean autoLogin = preferences.getBoolean("autoLogin", false);
+                connectFlag = MqttConnector.createMqttClient(address, name, pass);
+                MqttConnector.disconnect();
+                if (autoLogin) {
+                    if(connectFlag){
+                        Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
+                        Log.d("Auto Login", "connecting Success");
+                        startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                        finish();
+                    } else {
+                        Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
+                        Log.e("Auto Login", "Connecting Error");
+                    }
                 } else {
-                    Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
-                    Log.e("Auto Login", "Connecting Error");
+                    Toast.makeText(this, "자동 로그인 실패", Toast.LENGTH_SHORT).show();
                 }
-            } else {
-                Toast.makeText(this, "자동 로그인 실패", Toast.LENGTH_SHORT).show();
             }
         }
 
