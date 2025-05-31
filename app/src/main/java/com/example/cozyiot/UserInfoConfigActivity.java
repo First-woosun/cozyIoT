@@ -93,19 +93,25 @@ public class UserInfoConfigActivity extends AppCompatActivity {
 
         // 사용자 정보 초기화 버튼
         resetBtn.setOnClickListener(v -> {
+            String resetUserName = userNameInput.getText().toString();
             if(!preferences.getAll().isEmpty()){
                 editor.clear();
                 editor.apply();
 
+                MqttConnector.createMqttClient("218.49.196.80:1883", "cozydow", "1234");
+                MqttConnector.publish("reset:" , "userInfo/config");
+                if ( resetUserName != null && ! resetUserName.isEmpty()) {
+                MqttConnector.publish( resetUserName, "userInfo/name");
+                }
+                MqttConnector.disconnect();
                 userNameInput.setText("");
                 userPasswordInput.setText("");
                 wifiNameInput.setText("");
                 wifiPasswordInput.setText("");
                 IPAddressInput.setText("");
 
-                MqttConnector.createMqttClient("218.49.196.80:1883", "cozydow", "1234");
-                MqttConnector.publish("reset:" , "userInfo/config");
-                MqttConnector.publish("userName:" , "userInfo/name");
+
+
 
             } else {
                 Toast.makeText(this, "저장된 정보가 없습니다.", Toast.LENGTH_SHORT).show();
