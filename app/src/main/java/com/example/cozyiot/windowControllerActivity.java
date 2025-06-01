@@ -9,10 +9,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.*;
 import com.example.cozyiot.func.MqttConnector;
-import com.example.cozyiot.func.MqttConnectorTest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class windowControllerActivity extends AppCompatActivity {
 
@@ -27,7 +31,7 @@ public class windowControllerActivity extends AppCompatActivity {
     Button openBtn; Button closeBtn;
     Switch autoSwitch;
     ImageView windowState;
-    TextView huminityView; TextView backBtn;
+    TextView huminityView, backBtn, weatherView;
 
     //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
     //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
@@ -43,10 +47,7 @@ public class windowControllerActivity extends AppCompatActivity {
     //습도 데이터 처리를 위한 멀티스레드 작동 flag
     private static boolean multiThreadRun;
 
-    //습도 데이터를 저장할 변수
     private static String huminity;
-
-    //온도 데이터를 저장할 변수
     private static String temperature;
 
     private MqttConnector controllerConnector;
@@ -134,13 +135,12 @@ public class windowControllerActivity extends AppCompatActivity {
             huminityThread.start(); // 새 스레드를 시작
         }
 
-        //현재 창문 상태에 따라 창문 이미지 설정
-        //TODO 서버에 저장된 window status 값을 읽어와 업데이트 하도록 수정
         if(!isopen){
             windowState.setImageResource(R.drawable.window_status_close);
         } else {
             windowState.setImageResource(R.drawable.window_status_open);
         }
+
 
         //창문 자동 제어
         autoSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -163,6 +163,7 @@ public class windowControllerActivity extends AppCompatActivity {
         });
 
         //창문 개방 버튼
+
         openBtn.setOnClickListener(v -> {
             if(isConnect){
                 if(!isopen){
@@ -172,7 +173,6 @@ public class windowControllerActivity extends AppCompatActivity {
                     isopen = true;
                     Toast.makeText(this, "창문을 개방합니다.", Toast.LENGTH_SHORT).show();
                     windowState.setImageResource(R.drawable.window_status_open);
-//                    System.out.println(MqttConnector.getLatestMassage());
                 } else {
                     Toast.makeText(this, "이미 창문이 열려있습니다.", Toast.LENGTH_SHORT).show();
                 }
@@ -181,7 +181,6 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         });
 
-        //창문 패쇄 버튼
         closeBtn.setOnClickListener(v ->{
             if(isConnect){
                 if(isopen){
@@ -206,6 +205,62 @@ public class windowControllerActivity extends AppCompatActivity {
             startActivity(new Intent(this, HomeActivity.class));
             finish();
         });
+
+        btnConfirmLocation.setOnClickListener(v -> {
+            Intent intent = new Intent(windowControllerActivity.this, MapActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
+        float latitude = locationPrefs.getFloat("latitude", 0f);
+        float longitude = locationPrefs.getFloat("longitude", 0f);
+
+        if (latitude != 0f && longitude != 0f) {
+            loadWeatherFromSavedLocation(latitude, longitude);
+        } else {
+            weatherView.setText("위치 정보가 없습니다.");
+        }
+    }
+
+    private void loadWeatherFromSavedLocation(float lat, float lon) {
+        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
+                "&lon=" + lon +
+                "&appid=" + apiKey +
+                "&units=metric&lang=kr";
+
+        new Thread(() -> {
+            try {
+                URL requestUrl = new URL(url);
+                HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
+                conn.setRequestMethod("GET");
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder result = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
+                reader.close();
+
+                JSONObject response = new JSONObject(result.toString());
+                String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
+                double temp = response.getJSONObject("main").getDouble("temp");
+
+                String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
+
+                runOnUiThread(() -> weatherView.setText(finalText));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> weatherView.setText("날씨 정보를 불러올 수 없습니다."));
+            }
+        }).start();
     }
 
     @Override
