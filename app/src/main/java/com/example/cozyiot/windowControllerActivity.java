@@ -147,18 +147,21 @@ public class windowControllerActivity extends AppCompatActivity {
         autoSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Intent serviceIntent = new Intent(windowControllerActivity.this, foreGroundService.class);
                 if(isChecked){
                     String topic = "window/auto_motor_request";
                     String message = "true";
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "true");
                     editor.apply();
+                    startService(serviceIntent);
                 }else{
                     String topic = "window/auto_motor_request";
                     String message = "false";
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "false");
                     editor.apply();
+                    stopService(serviceIntent);
                 }
             }
         });
@@ -203,7 +206,7 @@ public class windowControllerActivity extends AppCompatActivity {
         backBtn.setOnClickListener(v ->{
             controllerConnector.disconnect();
             multiThreadRun = false;
-            startActivity(new Intent(this, HomeActivity.class));
+//            startActivity(new Intent(this, HomeActivity.class));
             finish();
         });
 
