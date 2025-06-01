@@ -19,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
 
     SharedPreferences preferences;;
 
+    private MqttConnector loginConnector;
+
     private static boolean connectFlag;
     private static boolean autoLoginFlag;
 
@@ -43,21 +45,17 @@ public class MainActivity extends AppCompatActivity {
                 String name = preferences.getString("userName", "");
                 String pass = preferences.getString("userPassword", "");
                 String address = preferences.getString("IPAddress", "");
-                boolean autoLogin = preferences.getBoolean("autoLogin", false);
-                connectFlag = MqttConnector.createMqttClient(address, name, pass);
-                MqttConnector.disconnect();
-                if (autoLogin) {
-                    if(connectFlag){
-                        Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
-                        Log.d("Auto Login", "connecting Success");
-                        startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                        finish();
-                    } else {
-                        Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
-                        Log.e("Auto Login", "Connecting Error");
-                    }
+                loginConnector = new MqttConnector(address, name, pass);
+                connectFlag = loginConnector.connect();
+                if(connectFlag){
+                    Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
+                    Log.d("Auto Login", "connecting Success");
+                    loginConnector.disconnect();
+                    startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                    finish();
                 } else {
-                    Toast.makeText(this, "자동 로그인 실패", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "로그인 에러", Toast.LENGTH_SHORT).show();
+                    Log.e("Auto Login", "Connecting Error");
                 }
             }
         }
@@ -68,20 +66,42 @@ public class MainActivity extends AppCompatActivity {
             String passInput = passwordInput.getText().toString();
             String address = preferences.getString("IPAddress", "");
 
-            connectFlag = MqttConnector.createMqttClient(address, nameInput, passInput);
-            MqttConnector.disconnect();
-
-            if(connectFlag){
-                Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean("autoLogin", true); // 자동 로그인 설정
-                editor.apply();
-                Log.d("Login", "Login Success");
-                startActivity(new Intent(MainActivity.this, HomeActivity.class));
-                finish();
+            //백도어(?)
+            if(nameInput.equals("cozydow")){
+                loginConnector = new MqttConnector("218.49.196.80:1883", nameInput, passInput);
+                connectFlag = loginConnector.connect();
+                if(connectFlag){
+                    Toast.makeText(this, "관리자 계정 로그인", Toast.LENGTH_SHORT).show();
+                    Log.i("Login", "관리자 로그인");
+                    loginConnector.disconnect();
+                    Intent intent = new Intent(this, HomeActivity.class);
+                    intent.putExtra("admin", true);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show();
+                    Log.e("Login", "Login Fail");
+                }
             } else {
-                Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show();
-                Log.e("Login", "Login Fail");
+                //일반 사용자 로그인
+                loginConnector = new MqttConnector(address, nameInput, passInput);
+                connectFlag = loginConnector.connect();
+
+                if(connectFlag){
+                    Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putBoolean("autoLogin", true); // 자동 로그인 설정
+                    editor.apply();
+                    Log.d("Login", "Login Success");
+                    loginConnector.disconnect();
+                    Intent intent = new Intent(this, HomeActivity.class);
+                    intent.putExtra("admin", false);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(this, "로그인 실패", Toast.LENGTH_SHORT).show();
+                    Log.e("Login", "Login Fail");
+                }
             }
         });
 

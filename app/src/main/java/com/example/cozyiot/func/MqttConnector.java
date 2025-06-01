@@ -1,33 +1,33 @@
 package com.example.cozyiot.func;
 
 import android.util.Log;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.*;
 
 public class MqttConnector {
-    private static MqttClient mqttClient;
+    private MqttClient mqttClient;
+    private String latestMessage = null;
     private static final String TAG = "MqttConnector";
-//    private static final String SERVER_URI = "tcp://218.49.196.80:1883"; //공인외부 아이피 설정
+    private final String serverUri;
+    private final String clientId;
+    private final String clientPassword;
 
-    private static String latestMassage = null;
+    // 생성자에서 정보만 설정하고 연결은 나중에
+    public MqttConnector(String ipAddress, String clientId, String clientPassword) {
+        this.serverUri = "tcp://" + ipAddress;
+        this.clientId = clientId;
+        this.clientPassword = clientPassword;
+    }
 
-    // MQTT 클라이언트 연결
-    public static boolean createMqttClient(String IPAddress ,String CLIENT_ID, String CLIENT_PASSWORD) {
+    // 연결 메서드 (성공 시 true 반환)
+    public boolean connect() {
         try {
-            String SERVER_URI = "tcp://" + IPAddress;
-            mqttClient = new MqttClient(SERVER_URI, CLIENT_ID, null);
+            mqttClient = new MqttClient(serverUri, clientId, null);
+
             MqttConnectOptions options = new MqttConnectOptions();
             options.setCleanSession(true);
-            options.setUserName(CLIENT_ID);
-            options.setPassword(CLIENT_PASSWORD.toCharArray());
-            mqttClient.connect(options);
-            Log.d(TAG, "Connected to MQTT broker");
+            options.setUserName(clientId);
+            options.setPassword(clientPassword.toCharArray());
 
-            // 콜백 설정
             mqttClient.setCallback(new MqttCallback() {
                 @Override
                 public void connectionLost(Throwable cause) {
@@ -35,9 +35,9 @@ public class MqttConnector {
                 }
 
                 @Override
-                public void messageArrived(String topic, MqttMessage message) throws Exception {
+                public void messageArrived(String topic, MqttMessage message) {
                     Log.d(TAG, "Message arrived: " + message.toString());
-                    latestMassage = message.toString();
+                    latestMessage = message.toString();
                 }
 
                 @Override
@@ -45,6 +45,9 @@ public class MqttConnector {
                     Log.d(TAG, "Delivery complete");
                 }
             });
+
+            mqttClient.connect(options);
+            Log.d(TAG, "Connected to MQTT broker");
             return true;
         } catch (MqttException e) {
             Log.e(TAG, "Failed to connect to MQTT broker", e);
@@ -52,49 +55,45 @@ public class MqttConnector {
         }
     }
 
-    // MQTT 서버로 메시지 발행
-    public static void publish(String message, String topic) {
-        if (mqttClient != null && mqttClient.isConnected()) {
-            try {
+    public void publish(String topic, String message) {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
                 MqttMessage mqttMessage = new MqttMessage(message.getBytes());
                 mqttClient.publish(topic, mqttMessage);
                 Log.d(TAG, "Message published to topic: " + topic);
-            } catch (MqttException e) {
-                Log.e(TAG, "Failed to publish message", e);
+            } else {
+                Log.e(TAG, "MQTT client not connected");
             }
-        } else {
-            Log.e(TAG, "MQTT client not connected");
+        } catch (MqttException e) {
+            Log.e(TAG, "Failed to publish message", e);
         }
     }
 
-    // MQTT 서버 구독
-    public static void subscribe(String topic) {
-        if (mqttClient != null && mqttClient.isConnected()) {
-            try {
+    public void subscribe(String topic) {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
                 mqttClient.subscribe(topic);
                 Log.d(TAG, "Subscribed to topic: " + topic);
-            } catch (MqttException e) {
-                Log.e(TAG, "Failed to subscribe", e);
+            } else {
+                Log.e(TAG, "MQTT client not connected");
             }
-        } else {
-            Log.e(TAG, "MQTT client not connected");
+        } catch (MqttException e) {
+            Log.e(TAG, "Failed to subscribe", e);
         }
     }
 
-    // MQTT 연결 해제
-    public static void disconnect() {
-        if (mqttClient != null && mqttClient.isConnected()) {
-            try {
+    public void disconnect() {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
                 mqttClient.disconnect();
                 Log.d(TAG, "Disconnected from MQTT broker");
-            } catch (MqttException e) {
-                Log.e(TAG, "Failed to disconnect", e);
             }
+        } catch (MqttException e) {
+            Log.e(TAG, "Failed to disconnect", e);
         }
     }
 
-    public static String getLatestMassage(){
-
-        return latestMassage;
+    public String getLatestMessage() {
+        return latestMessage;
     }
 }

@@ -1,5 +1,7 @@
 package com.example.cozyiot.Machine;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.graphics.Color;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +9,8 @@ import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -37,6 +41,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     private int addClickCount = 1;
     private Context context;
+    private Boolean adminFlag;
     private List<machineData> machineDataList;
     private final Gson gson = new Gson();
 
@@ -50,10 +55,11 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         this.addClickListener = listener;
     }
 
-    public machineDataAdapter(Context context, List<machineData> machineDataList) {
+    public machineDataAdapter(Context context, Boolean adminFlag, List<machineData> machineDataList) {
         this.context = context;
+        this.adminFlag = adminFlag;
 
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         addClickCount = prefs.getInt(KEY_ADD_CLICK_COUNT, 1);
 
         String json = prefs.getString(KEY_MACHINE_LIST, null);
@@ -97,15 +103,48 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             int colorIndex = position % cardColors.length;
             machineHolder.cardInnerLayout.setBackgroundColor(cardColors[colorIndex]);
 
+            SharedPreferences preferences = context.getSharedPreferences("auto", MODE_PRIVATE);
+            SharedPreferences.Editor editor = preferences.edit();
+            String switchFlag = preferences.getString("auto", "false");
+            if(switchFlag.equals("true")){
+                machineHolder.deviceSwitch.setChecked(true);
+            } else {
+                machineHolder.deviceSwitch.setChecked(false);
+            }
+
+            machineHolder.deviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if(isChecked){
+                        String topic = "window/auto_motor_request";
+                        String message = "true";
+//                        controllerConnector.publish(topic, message);
+                        editor.putString("auto", "true");
+                        editor.apply();
+                    }else{
+                        String topic = "window/auto_motor_request";
+                        String message = "false";
+//                        controllerConnector.publish(topic, message);
+                        editor.putString("auto", "false");
+                        editor.apply();
+                    }
+                }
+            });
+
             machineHolder.itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(context, windowControllerActivity.class);
+                intent.putExtra("admin", this.adminFlag);
                 context.startActivity(intent);
             });
 
-            machineHolder.itemView.setOnLongClickListener(v -> {
+            machineHolder.deleteBtn.setOnClickListener(v -> {
                 remove(position);
-                return true;
             });
+
+//            machineHolder.itemView.setOnLongClickListener(v -> {
+//                remove(position);
+//                return true;
+//            });
 
         } else if (holder instanceof AddViewHolder) {
             AddViewHolder addHolder = (AddViewHolder) holder;
@@ -117,7 +156,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 if (addClickListener != null) {
                     addClickCount++;
 
-                    SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                    SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
                     SharedPreferences.Editor editor = prefs.edit();
                     editor.putInt(KEY_ADD_CLICK_COUNT, addClickCount);
                     editor.apply();
@@ -141,7 +180,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     }
 
     private void saveMachineList() {
-        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         String json = gson.toJson(machineDataList);
         editor.putString(KEY_MACHINE_LIST, json);
@@ -150,12 +189,18 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
     public static class MachineViewHolder extends RecyclerView.ViewHolder {
         public TextView machineName;
+        public TextView machineStatus;
+        public TextView deleteBtn;
         public View cardInnerLayout;
+        public Switch deviceSwitch;
 
         public MachineViewHolder(View view) {
             super(view);
             machineName = view.findViewById(R.id.machine_name);
+            machineStatus = view.findViewById(R.id.device_status);
+            deleteBtn = view.findViewById(R.id.delete_btn);
             cardInnerLayout = view.findViewById(R.id.card_inner_layout);
+            deviceSwitch = view.findViewById(R.id.device_switch);
         }
     }
 

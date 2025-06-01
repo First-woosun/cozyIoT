@@ -20,12 +20,17 @@ import android.widget.*;
 
 import com.example.cozyiot.func.MqttConnector;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.color.utilities.TonalPalette;
 import com.google.android.material.navigation.NavigationView;
+
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HomeActivity extends AppCompatActivity {
+
+    private MqttConnector homeConnector;
 
     private ImageButton machineAddBtn;
 
@@ -43,19 +48,35 @@ public class HomeActivity extends AppCompatActivity {
 
     private static boolean connectFlag;
 
+    private boolean adminFlag;
+
+    private String Address; private  String Name; private String Password;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
 
+        Intent intent = getIntent();
+
+        adminFlag = intent.getBooleanExtra("admin", false);
+
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
 
-        String Address = preferences.getString("IPAddress", "");
-        String Name = preferences.getString("userName", "");
-        String Password = preferences.getString("userPassword", "");
+        //계정 유형에 따른 데이터 load
+        if(adminFlag){
+            Address = "218.49.196.80:1883";
+            Name = "cozydow";
+            Password = "1234";
+        } else {
+            Address = preferences.getString("IPAddress", "");
+            Name = preferences.getString("userName", "");
+            Password = preferences.getString("userPassword", "");
+        }
 
-        MqttConnector.createMqttClient(Address, Name, Password);
+
+        homeConnector = new MqttConnector(Address, Name, Password);
 
         //machineAddBtn = findViewById(R.id.btn_add_item);
 
@@ -65,7 +86,7 @@ public class HomeActivity extends AppCompatActivity {
         machineDataList = new ArrayList<>();
         machineDataList.add(new machineData("window"));
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
-        machineDataAdapter = new machineDataAdapter(HomeActivity.this, machineDataList);
+        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
         recyclerView.setAdapter(machineDataAdapter);
 
         machineDataAdapter.setOnAddClickListener(() -> {
@@ -103,7 +124,13 @@ public class HomeActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(menuItem -> {
             int id = menuItem.getItemId();
             if(id == R.id.nav_user_info_config){
-                startActivity(new Intent(this, UserInfoConfigActivity.class));
+                if(adminFlag){
+                    Toast.makeText(this, "관리자 계정은 변경할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent userInfoIntent = new Intent(this, UserInfoConfigActivity.class);
+                    userInfoIntent.putExtra("admin", false);
+                    startActivity(userInfoIntent);
+                }
             }
             drawerLayout.closeDrawer(GravityCompat.END);
             return true;
@@ -127,4 +154,16 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        recyclerView = findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+
+        machineDataList = new ArrayList<>();
+        machineDataList.add(new machineData("window"));
+        // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
+        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
+        recyclerView.setAdapter(machineDataAdapter);
+        super.onResume();
+    }
 }
