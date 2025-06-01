@@ -79,22 +79,52 @@ public class foreGroundService extends Service {
 
         Intent notificationIntent = new Intent(this, windowControllerActivity.class);
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);  // 여기 수정됨
 
         builder.setContentIntent(pendingIntent); // 알림 클릭 시 이동
 
-        // 알림 표시
         NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(new NotificationChannel("default", "기본 채널", NotificationManager.IMPORTANCE_DEFAULT));
+            notificationManager.createNotificationChannel(
+                    new NotificationChannel("default", "기본 채널", NotificationManager.IMPORTANCE_DEFAULT));
         }
 
-//        notificationManager.notify(NOTI_ID, builder.build()); // id : 정의해야하는 각 알림의 고유한 int값
-//        Notification notification = builder.build();
         notificationManager.notify(NOTI_ID, builder.build());
         Notification notification = builder.build();
         startForeground(NOTI_ID, notification);
     }
+
+
+//    private void createNotification() {
+//
+//        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
+//
+//        builder.setSmallIcon(R.mipmap.ic_launcher);
+//        builder.setContentTitle("Foreground Service");
+//        builder.setContentText("포그라운드 서비스");
+//
+//        builder.setColor(Color.WHITE);
+//
+//        Intent notificationIntent = new Intent(this, windowControllerActivity.class);
+//        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+//
+//        builder.setContentIntent(pendingIntent); // 알림 클릭 시 이동
+//
+//        // 알림 표시
+//        NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            notificationManager.createNotificationChannel(new NotificationChannel("default", "기본 채널", NotificationManager.IMPORTANCE_DEFAULT));
+//        }
+//
+////        notificationManager.notify(NOTI_ID, builder.build()); // id : 정의해야하는 각 알림의 고유한 int값
+////        Notification notification = builder.build();
+//        notificationManager.notify(NOTI_ID, builder.build());
+//        Notification notification = builder.build();
+//        startForeground(NOTI_ID, notification);
+//    }
 
     @Override
     public void onDestroy() {

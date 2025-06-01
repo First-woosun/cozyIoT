@@ -24,7 +24,12 @@ import com.google.android.material.color.utilities.TonalPalette;
 import com.google.android.material.navigation.NavigationView;
 
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -168,4 +173,40 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setAdapter(machineDataAdapter);
         super.onResume();
     }
+//
+//    private void loadWeatherFromSavedLocation(float lat, float lon) {
+//        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
+//        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
+//                "&lon=" + lon +
+//                "&appid=" + apiKey +
+//                "&units=metric&lang=kr";
+//
+//        new Thread(() -> {
+//            try {
+//                URL requestUrl = new URL(url);
+//                HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
+//                conn.setRequestMethod("GET");
+//
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//                StringBuilder result = new StringBuilder();
+//                String line;
+//                while ((line = reader.readLine()) != null) {
+//                    result.append(line);
+//                }
+//                reader.close();
+//
+//                JSONObject response = new JSONObject(result.toString());
+//                String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
+//                double temp = response.getJSONObject("main").getDouble("temp");
+//
+//                String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
+//
+//                runOnUiThread(() -> weatherView.setText(finalText));
+//
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//                runOnUiThread(() -> weatherView.setText("날씨 정보를 불러올 수 없습니다."));
+//            }
+//        }).start();
+//    }
 }

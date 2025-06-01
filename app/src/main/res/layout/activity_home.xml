@@ -15,11 +15,11 @@
         android:layout_height="match_parent"
         android:padding="16dp">
 
-<!--        <com.google.android.material.appbar.MaterialToolbar-->
-<!--            android:id="@+id/toolbar"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="?attr/actionBarSize"-->
-<!--            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"/>-->
+        <!--        <com.google.android.material.appbar.MaterialToolbar-->
+        <!--            android:id="@+id/toolbar"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="?attr/actionBarSize"-->
+        <!--            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"/>-->
 
         <!-- 사이드바 여는 버튼 -->
         <ImageButton
@@ -32,23 +32,63 @@
             android:background="@drawable/sidebar_icon1"
             android:contentDescription="사이드바 버튼" />
 
-        <!-- 날씨 정보를 표시할 LinearLayout -->
-        <LinearLayout
-            android:id="@+id/weather_info"
+        <androidx.cardview.widget.CardView
+            android:id="@+id/weather_card"
             android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:layout_below="@id/btn_sidebar"
-            android:orientation="vertical"
-            android:layout_marginTop="10dp">
+            android:layout_height="150dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="60dp"
+            android:layout_marginEnd="16dp"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp">
 
-            <!-- 내부에 TextView 등을 자유롭게 추가 -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="날씨 정보"
-                android:textSize="18sp"
-                android:textColor="#000000" />
-        </LinearLayout>
+            <!-- 날씨 정보를 표시할 LinearLayout -->
+            <LinearLayout
+                android:id="@+id/weather_info"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/weather_card_blue"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tv_city_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="20dp"
+                    android:text="서울"
+                    android:textColor="#ffffff"
+                    android:textSize="50sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="20dp"
+                    android:layout_weight="1"
+                    android:gravity="end|center_vertical"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:id="@+id/tv_weather_status"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:src="@drawable/clear_weather" />
+
+                    <TextView
+                        android:id="@+id/tv_temperature"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="15dp"
+                        android:layout_marginBottom="10dp"
+                        android:text="24°C"
+                        android:textColor="#ffffff"
+                        android:textSize="40sp" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
 
         <!-- 리사이클러뷰 표시 영역 -->
@@ -56,12 +96,11 @@
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_below="@id/weather_info"
+            android:layout_below="@id/weather_card"
             android:layout_alignParentBottom="true"
-            android:layout_marginTop="100dp"
-            android:padding="20dp"
+            android:layout_marginTop="50dp"
             android:clipToPadding="false"
-            />
+            android:padding="20dp" />
 
 
     </RelativeLayout>
