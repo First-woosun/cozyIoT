@@ -19,6 +19,8 @@ public class signUpActivity extends AppCompatActivity {
     TextView UsernameInput; TextView UserpasswordInput; TextView WIFINameInput; TextView WIFIPasswordInput; TextView IPAddressInput;
     Button signUpBtn;
 
+    private static MqttConnector signUpConnector;
+
     private String Username;
     private String Password;
     private String WIFIName;
@@ -38,6 +40,8 @@ public class signUpActivity extends AppCompatActivity {
 
         SharedPreferences preference = getSharedPreferences("UserInfo", MODE_PRIVATE);
         SharedPreferences.Editor editor = preference.edit();
+
+        signUpConnector = new MqttConnector("218.49.196.80:1883", "cozydow", "1234");
 
         UsernameInput = findViewById(R.id.editTextUsername);
         UserpasswordInput = findViewById(R.id.editTextPassword);
@@ -66,14 +70,14 @@ public class signUpActivity extends AppCompatActivity {
                 Toast.makeText(this, "저장 완료", Toast.LENGTH_SHORT).show();
 
                 //사용자 정보를 서버에 전송
-                MqttConnector.createMqttClient("218.49.196.80:1883", "cozydow", "1234");
-                MqttConnector.publish(Username, "userInfo/name");
-                MqttConnector.publish(Password, "userInfo/password");
-                MqttConnector.publish(WIFIName, "userInfo/wifiName");
-                MqttConnector.publish(WIFIPassword, "userInfo/wifiPassword");
-                MqttConnector.publish(IPAddress, "userInfo/IPAddress");
-                MqttConnector.publish("save", "userInfo/config");
-                MqttConnector.disconnect();
+                signUpConnector.connect();
+                signUpConnector.publish("userInfo/name", Username);
+                signUpConnector.publish("userInfo/password", Password);
+                signUpConnector.publish("userInfo/wifiName", WIFIName);
+                signUpConnector.publish("userInfo/wifiPassword", WIFIPassword);
+                signUpConnector.publish("userInfo/IPAddress", IPAddress);
+                signUpConnector.publish("userInfo/config", "save");
+                signUpConnector.disconnect();
 
                 Toast.makeText(this, "회원가입 완료", Toast.LENGTH_SHORT).show();
 
