@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:background="@drawable/background"
+    android:background="#ffffff"
     tools:context=".MainActivity">
 
     <RelativeLayout
@@ -24,14 +24,13 @@
         <!-- 사이드바 여는 버튼 -->
         <ImageButton
             android:id="@+id/btn_sidebar"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginTop="10dp"
+            android:layout_width="30dp"
+            android:layout_height="38dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
-            android:contentDescription="사이드바 버튼"
-            android:src="@drawable/sidebar_ripple"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:layout_marginTop="10dp"
+            android:background="@drawable/sidebar_icon1"
+            android:contentDescription="사이드바 버튼" />
 
         <!-- 날씨 정보를 표시할 LinearLayout -->
         <LinearLayout
@@ -51,30 +50,17 @@
                 android:textColor="#000000" />
         </LinearLayout>
 
-        <!-- 리사이클러뷰에 요소 추가 버튼 -->
-        <ImageButton
-            android:id="@+id/btn_add_item"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_below="@id/weather_info"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="10dp"
-            android:contentDescription="요소 추가 버튼"
-            android:src="@drawable/add_ripple"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
 
         <!-- 리사이클러뷰 표시 영역 -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_below="@id/btn_add_item"
+            android:layout_below="@id/weather_info"
             android:layout_alignParentBottom="true"
-            android:layout_marginTop="16dp"
-            android:padding="8dp"
+            android:layout_marginTop="100dp"
+            android:padding="20dp"
             android:clipToPadding="false"
-            android:background="@drawable/recycler_border"
             />
 
 

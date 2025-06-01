@@ -57,21 +57,24 @@ public class HomeActivity extends AppCompatActivity {
 
         MqttConnector.createMqttClient(Address, Name, Password);
 
-        machineAddBtn = findViewById(R.id.btn_add_item);
+        //machineAddBtn = findViewById(R.id.btn_add_item);
 
         recyclerView = findViewById(R.id.recycler_view);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
         machineDataList = new ArrayList<>();
-        machineDataList.add(new machineData("거실 창문"));
-
+        machineDataList.add(new machineData("window"));
+        // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
         machineDataAdapter = new machineDataAdapter(HomeActivity.this, machineDataList);
         recyclerView.setAdapter(machineDataAdapter);
 
-        machineAddBtn.setOnClickListener(v -> {
-            machineDataList.add(new machineData("기기 추가 예시"));
-            recyclerView.setAdapter(machineDataAdapter);
+        machineDataAdapter.setOnAddClickListener(() -> {
+            // 새 기기 리스트에 추가
+            machineDataList.add(new machineData("새 기기"));
+            // 어댑터에 알리기 - 새 항목 추가됨
+            machineDataAdapter.notifyItemInserted(machineDataList.size() - 1);
         });
+
 
 
         sidebarBtn = findViewById(R.id.btn_sidebar);
@@ -123,4 +126,5 @@ public class HomeActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
+
 }
