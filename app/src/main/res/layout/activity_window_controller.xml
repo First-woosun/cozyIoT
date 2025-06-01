@@ -35,11 +35,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Window Illustration (2 rectangles) -->
 
-    <!-- Auto Label and Switch with Icon -->
-
-    <!-- Open and Close Buttons -->
 
     <ImageView
         android:id="@+id/window_state"
@@ -70,7 +66,6 @@
             android:text="자동제어"
             android:textSize="20sp"
             android:textStyle="bold" />
-
         <Switch
             android:id="@+id/switch_auto"
             android:layout_width="wrap_content"
@@ -91,7 +86,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="현재습도 : "
-            android:textSize="20sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
@@ -99,7 +94,26 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="0%"
-            android:textSize="20sp"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/weather_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/huminity_set">
+
+        <TextView
+            android:id="@+id/weather_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="기상정보"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
