@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.util.Log;
 import android.widget.*;
 import com.example.cozyiot.func.MqttConnector;
@@ -28,7 +27,7 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String IPAddress;
 
     //안드로이드 세그먼트 선언
-    Button openBtn; Button closeBtn;
+    Button openBtn; Button closeBtn; Button btnConfirmLocation;
     Switch autoSwitch;
     ImageView windowState;
     TextView huminityView, backBtn, weatherView;
@@ -71,6 +70,8 @@ public class windowControllerActivity extends AppCompatActivity {
         huminityView = findViewById(R.id.huminity_view);
         backBtn = findViewById(R.id.btn_back);
         autoSwitch = findViewById(R.id.switch_auto);
+        btnConfirmLocation = findViewById(R.id.btn_confirm_location);
+        weatherView = findViewById(R.id.weather_view);
 
         if(adminFlag){
             userName = "cozydow";
@@ -207,8 +208,8 @@ public class windowControllerActivity extends AppCompatActivity {
         });
 
         btnConfirmLocation.setOnClickListener(v -> {
-            Intent intent = new Intent(windowControllerActivity.this, MapActivity.class);
-            startActivity(intent);
+            Intent mapIntent = new Intent(windowControllerActivity.this, MapActivity.class);
+            startActivity(mapIntent);
         });
     }
 
