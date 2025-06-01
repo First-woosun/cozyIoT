@@ -138,6 +138,8 @@ public class HomeActivity extends AppCompatActivity {
         navLogout = findViewById(R.id.nav_logout)   ;
         navLogout.setOnClickListener(v -> {
             SharedPreferences.Editor editor = preferences.edit();
+            editor.clear();
+            editor.apply();
             editor.putBoolean("autoLogin", false); // 여기서 자동로그인 끄기
             editor.apply();
             startActivity(new Intent(this, MainActivity.class));
