@@ -1,5 +1,6 @@
 package com.example.cozyiot;
 
+import android.app.appsearch.StorageInfo;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -51,7 +52,7 @@ public class UserInfoConfigActivity extends AppCompatActivity {
 
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        location = getSharedPreferences("locationInfo", MODE_PRIVATE);
+        location = getSharedPreferences("location_prefs", MODE_PRIVATE);
 
         infoConnector = new MqttConnector("218.49.196.80:1883", "cozydow", "1234");
         infoConnector.connect();
@@ -66,9 +67,9 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         }
 
         if(!location.getAll().isEmpty()){
-            String latitude = location.getString("latitude", "");
-            String longitude = location.getString("longitude", "");
-            String location = latitude + ", "+longitude;
+            float latitude = location.getFloat("latitude", 0f);
+            float longitude = location.getFloat("longitude", 0f);
+            String location = String.valueOf(latitude) + ", "+ String.valueOf(longitude);
             locationInput.setText(location);
         }
         

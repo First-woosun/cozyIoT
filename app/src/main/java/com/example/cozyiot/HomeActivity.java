@@ -1,5 +1,7 @@
 package com.example.cozyiot;
 
+import static android.view.View.INVISIBLE;
+
 import com.example.cozyiot.Machine.*;
 
 import android.content.Intent;
@@ -12,18 +14,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.view.MenuItem;
 import android.widget.*;
 
 import com.example.cozyiot.func.MqttConnector;
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.color.utilities.TonalPalette;
 import com.google.android.material.navigation.NavigationView;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -43,6 +40,7 @@ public class HomeActivity extends AppCompatActivity {
     private NavigationView navigationView;
     private ActionBarDrawerToggle toggle;
     private ImageButton sidebarBtn;
+    TextView cityName; ImageView weatherStatus; TextView temperature;
 
     private RecyclerView recyclerView;
     private machineDataAdapter machineDataAdapter;
@@ -50,12 +48,16 @@ public class HomeActivity extends AppCompatActivity {
     private List<machineData> machineDataList;
 
     private SharedPreferences preferences;
+    private SharedPreferences location;
 
     private static boolean connectFlag;
 
     private boolean adminFlag;
 
     private String Address; private  String Name; private String Password;
+    private String city; private float latitude; private float longtitude;
+
+    private boolean threadFlag = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,11 +65,20 @@ public class HomeActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
 
+        cityName = findViewById(R.id.tv_city_name);
+        weatherStatus = findViewById(R.id.tv_weather_status);
+        temperature = findViewById(R.id.tv_temperature);
+
         Intent intent = getIntent();
 
         adminFlag = intent.getBooleanExtra("admin", false);
 
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
+        location = getSharedPreferences("location_prefs", MODE_PRIVATE);
+
+        city = location.getString("cityName", "");
+        latitude = location.getFloat("latitude", 0f);
+        longtitude = location.getFloat("longtitude", 0f);
 
         //계정 유형에 따른 데이터 load
         if(adminFlag){
@@ -80,6 +91,18 @@ public class HomeActivity extends AppCompatActivity {
             Password = preferences.getString("userPassword", "");
         }
 
+        if(!location.getAll().isEmpty()){
+            city = location.getString("cityName", "");
+            latitude = location.getFloat("latitude", 0f);
+            longtitude = location.getFloat("longtitude", 0f);
+            cityName.setText(city);
+
+            loadWeatherFromSavedLocation(latitude, longtitude);
+        } else {
+            cityName.setText("도시가 설정되지 않았습니다.");
+            weatherStatus.setVisibility(INVISIBLE);
+            temperature.setText("0°C");
+        }
 
         homeConnector = new MqttConnector(Address, Name, Password);
 
@@ -143,8 +166,8 @@ public class HomeActivity extends AppCompatActivity {
         navLogout = findViewById(R.id.nav_logout)   ;
         navLogout.setOnClickListener(v -> {
             SharedPreferences.Editor editor = preferences.edit();
-            editor.clear();
-            editor.apply();
+            editor.putString("userName", "");
+            editor.putString("userPassword", "");
             editor.putBoolean("autoLogin", false); // 여기서 자동로그인 끄기
             editor.apply();
             startActivity(new Intent(this, MainActivity.class));
@@ -157,6 +180,7 @@ public class HomeActivity extends AppCompatActivity {
         if(drawerLayout.isDrawerOpen(GravityCompat.END)){
             drawerLayout.closeDrawer(GravityCompat.END);;
         }else{
+            threadFlag = false;
             super.onBackPressed();
         }
     }
@@ -173,40 +197,44 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setAdapter(machineDataAdapter);
         super.onResume();
     }
-//
-//    private void loadWeatherFromSavedLocation(float lat, float lon) {
-//        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
-//        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
-//                "&lon=" + lon +
-//                "&appid=" + apiKey +
-//                "&units=metric&lang=kr";
-//
-//        new Thread(() -> {
-//            try {
-//                URL requestUrl = new URL(url);
-//                HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-//                conn.setRequestMethod("GET");
-//
-//                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//                StringBuilder result = new StringBuilder();
-//                String line;
-//                while ((line = reader.readLine()) != null) {
-//                    result.append(line);
-//                }
-//                reader.close();
-//
-//                JSONObject response = new JSONObject(result.toString());
-//                String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
-//                double temp = response.getJSONObject("main").getDouble("temp");
-//
-//                String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
-//
-//                runOnUiThread(() -> weatherView.setText(finalText));
-//
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                runOnUiThread(() -> weatherView.setText("날씨 정보를 불러올 수 없습니다."));
-//            }
-//        }).start();
-//    }
+
+    private void loadWeatherFromSavedLocation(float lat, float lon) {
+        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
+        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
+                "&lon=" + lon +
+                "&appid=" + apiKey +
+                "&units=metric&lang=kr";
+
+        new Thread(() -> {
+            if(threadFlag){
+                try {
+                    URL requestUrl = new URL(url);
+                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
+                    conn.setRequestMethod("GET");
+
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+
+                    JSONObject response = new JSONObject(result.toString());
+                    String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
+                    double temp = response.getJSONObject("main").getDouble("temp");
+
+                    String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
+                    String temp_now = temp+"°C";
+
+                    runOnUiThread(() -> temperature.setText(temp_now));
+
+                    Thread.sleep(30000);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
 }
