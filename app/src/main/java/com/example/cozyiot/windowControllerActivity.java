@@ -255,6 +255,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 JSONObject response = new JSONObject(result.toString());
                 String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
                 double temp = response.getJSONObject("main").getDouble("temp");
+                String location = response.getJSONArray("city").getJSONObject(0).getString("description");
 
                 String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
 

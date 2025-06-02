@@ -10,6 +10,14 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.location.Address;
+import android.location.Geocoder;
+import android.content.Context;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -32,9 +40,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        preferences = getSharedPreferences("locationInfo", MODE_PRIVATE);
-        editor = preferences.edit();
-
         confirmButton = findViewById(R.id.btn_confirm_location);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -51,6 +56,10 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putFloat("latitude", (float) selectedLatLng.latitude);
                 editor.putFloat("longitude", (float) selectedLatLng.longitude);
+
+                String city = getAddressFromLocation(this, selectedLatLng.latitude, selectedLatLng.longitude);
+                editor.putString("cityName", city);
+
                 editor.apply(); // 비동기 저장
 
                 Toast.makeText(this, "위치 저장 완료", Toast.LENGTH_SHORT).show();
@@ -96,5 +105,23 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
             mMap.clear(); // 기존 마커 제거
             mMap.addMarker(new MarkerOptions().position(latLng).title("선택한 위치"));
         });
+    }
+
+    public static String getAddressFromLocation(Context context, double latitude, double longitude) {
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        String result = "주소를 찾을 수 없습니다.";
+
+        try {
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+//                result = address.getAddressLine(0); // 전체 주소
+                  result = address.getLocality(); // 도시 이름만
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 }

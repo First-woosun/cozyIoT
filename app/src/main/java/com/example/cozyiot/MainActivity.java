@@ -90,7 +90,9 @@ public class MainActivity extends AppCompatActivity {
                 if(connectFlag){
                     Toast.makeText(this, "로그인 성공", Toast.LENGTH_SHORT).show();
                     SharedPreferences.Editor editor = preferences.edit();
-                    editor.putBoolean("autoLogin", true); // 자동 로그인 설정
+                    editor.putBoolean("autoLogin", true);// 자동 로그인 설정
+                    editor.putString("userName", nameInput);
+                    editor.putString("userPassword", passInput);
                     editor.apply();
                     Log.d("Login", "Login Success");
                     loginConnector.disconnect();
