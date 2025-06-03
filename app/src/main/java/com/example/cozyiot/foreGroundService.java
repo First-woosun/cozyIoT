@@ -36,8 +36,7 @@ public class foreGroundService extends Service {
     // Notification
     private static final int NOTI_ID = 1;
 
-    private MqttConnector auto;
-
+    public static MqttConnector auto;
     private float lat;
     private float lon;
 
@@ -58,7 +57,7 @@ public class foreGroundService extends Service {
         String Address = userInfo.getString("IPAddress", "");
         String Name = userInfo.getString("userName", "");
         String Password = userInfo.getString("userPassword", "");
-        auto = new MqttConnector(Address, Name, Password);
+        makeConnect(Address,Name,Password);
 
         SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
         lat = locationPrefs.getFloat("latitude", 0f);
@@ -87,6 +86,7 @@ public class foreGroundService extends Service {
             boolean temperatureFlag = false;
 
             url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
+
             auto.connect();
             auto.subscribe("pico/dht22");
 
@@ -219,7 +219,12 @@ public class foreGroundService extends Service {
         Log.d(TAG, "onDestroy");
     }
 
-    public void callDisconnect(){
+    public static  boolean callDisconnect(){
         auto.disconnect();
+        return false;
+    }
+    public static boolean makeConnect(String Address, String Name, String Password) {
+        auto = new MqttConnector(Address, Name, Password);
+        return false;
     }
 }
