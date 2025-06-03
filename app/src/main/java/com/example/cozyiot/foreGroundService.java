@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
@@ -14,15 +15,31 @@ import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 
-import com.example.cozyiot.MainActivity;
-import com.example.cozyiot.R;
+import com.example.cozyiot.func.MqttConnector;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class foreGroundService extends Service {
+
+    private String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
+    private String url;
+
+    private Context context;
 
     private static final String TAG = "CozyIOT FOREGROUND";
 
     // Notification
     private static final int NOTI_ID = 1;
+
+    private MqttConnector auto;
+
+    private float lat;
+    private float lon;
 
     public foreGroundService() {
     }
@@ -36,6 +53,17 @@ public class foreGroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        SharedPreferences userInfo = getSharedPreferences("UserInfo", MODE_PRIVATE);
+        String Address = userInfo.getString("IPAddress", "");
+        String Name = userInfo.getString("userName", "");
+        String Password = userInfo.getString("userPassword", "");
+        auto = new MqttConnector(Address, Name, Password);
+
+        SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
+        lat = locationPrefs.getFloat("latitude", 0f);
+        lon = locationPrefs.getFloat("longtitude", 0f);
+
         createNotification();
         mThread.start();
         Log.d(TAG, "onCreate");
@@ -54,13 +82,66 @@ public class foreGroundService extends Service {
         public void run() {
             super.run();
 
-            for (int i = 0; i<100; i++){
-                Log.d(TAG, "count : "+i);
+            boolean weatherFlag = false;
+            boolean huminityFlag = false;
+            boolean temperatureFlag = false;
 
+            url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
+            auto.connect();
+            auto.subscribe("pico/dht22");
+
+            while (true){
                 try {
-                    sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    URL requestUrl = new URL(url);
+                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
+                    conn.setRequestMethod("GET");
+
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder result = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        result.append(line);
+                    }
+                    reader.close();
+
+                    JSONObject response = new JSONObject(result.toString());
+                    
+                    //자동제어에 필요한 데이터 필드
+                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
+                    double temp = response.getJSONObject("main").getDouble("temp");
+//                    String huminityValue = auto.getLatestMessage();
+//                    float huminity = Float.parseFloat(huminityValue);
+
+                    //날씨에 따른 창문 개방 여부
+                    if (weatherId < 800 && weatherId >= 200) {
+                        // 창문을 열면 안되는 날씨
+                        weatherFlag = false;
+                    }else {
+                        // 창문을 열어도 되는 날씨
+                        weatherFlag = true;
+                    }
+
+                    // 내부 습도에 따른 창문 개방 여부
+//                    if (huminity < 50f || huminity > 60f){
+//                        // 환기 필요
+//                        huminityFlag = true;
+//                    } else {
+//                        // 환기 불필요
+//                        huminityFlag = false;
+//                    }
+                    
+                    // 자동제어 로직부
+                    if (weatherFlag) {
+                        auto.publish("window/motor_request", "open");
+                    } else {
+                        auto.publish("window/motor_request", "close");
+                    }
+                    
+                    Thread.sleep(10000);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    auto.disconnect();
                     break;
                 }
             }
@@ -72,8 +153,8 @@ public class foreGroundService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
 
         builder.setSmallIcon(R.mipmap.ic_launcher);
-        builder.setContentTitle("Foreground Service");
-        builder.setContentText("포그라운드 서비스");
+        builder.setContentTitle("CozyIot");
+        builder.setContentText("자동 제어 동작중");
 
         builder.setColor(Color.WHITE);
 
@@ -136,5 +217,9 @@ public class foreGroundService extends Service {
         }
 
         Log.d(TAG, "onDestroy");
+    }
+
+    public void callDisconnect(){
+        auto.disconnect();
     }
 }

@@ -47,7 +47,7 @@ public class windowControllerActivity extends AppCompatActivity {
     private static boolean multiThreadRun;
 
     private static String huminity;
-    private static String temperature;
+    private static String temperature;;
 
     private MqttConnector controllerConnector;
 
@@ -154,6 +154,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "true");
                     editor.apply();
+                    isConnect = controllerConnector.disconnect();
                     startService(serviceIntent);
                 }else{
                     String topic = "window/auto_motor_request";
@@ -162,6 +163,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     editor.putString("auto", "false");
                     editor.apply();
                     stopService(serviceIntent);
+                    isConnect = controllerConnector.connect();
                 }
             }
         });
