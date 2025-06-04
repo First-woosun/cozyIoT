@@ -195,6 +195,13 @@ public class HomeActivity extends AppCompatActivity {
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
         machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
         recyclerView.setAdapter(machineDataAdapter);
+        city = location.getString("cityName", "");
+        latitude = location.getFloat("latitude", 0f);
+        longtitude = location.getFloat("longtitude", 0f);
+        cityName.setText(city);
+
+        loadWeatherFromSavedLocation(latitude, longtitude);
+
         super.onResume();
     }
 

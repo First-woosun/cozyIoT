@@ -16,6 +16,7 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.cozyiot.R;
+import com.example.cozyiot.foreGroundService;
 import com.example.cozyiot.windowControllerActivity;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -115,18 +116,21 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             machineHolder.deviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    Intent serviceIntent = new Intent(context, foreGroundService.class);
                     if(isChecked){
                         String topic = "window/auto_motor_request";
                         String message = "true";
 //                        controllerConnector.publish(topic, message);
                         editor.putString("auto", "true");
                         editor.apply();
+                        context.startService(serviceIntent);
                     }else{
                         String topic = "window/auto_motor_request";
                         String message = "false";
 //                        controllerConnector.publish(topic, message);
                         editor.putString("auto", "false");
                         editor.apply();
+                        context.stopService(serviceIntent);
                     }
                 }
             });

@@ -82,7 +82,7 @@ public class MqttConnector {
         }
     }
 
-    public void disconnect() {
+    public boolean disconnect() {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
                 mqttClient.disconnect();
@@ -90,7 +90,9 @@ public class MqttConnector {
             }
         } catch (MqttException e) {
             Log.e(TAG, "Failed to disconnect", e);
+            return true;
         }
+        return false;
     }
 
     public String getLatestMessage() {

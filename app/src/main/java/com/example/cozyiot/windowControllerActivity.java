@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.*;
 import com.example.cozyiot.func.MqttConnector;
-
+import com.example.cozyiot.foreGroundService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -47,7 +47,7 @@ public class windowControllerActivity extends AppCompatActivity {
     private static boolean multiThreadRun;
 
     private static String huminity;
-    private static String temperature;
+    private static String temperature;;
 
     private MqttConnector controllerConnector;
 
@@ -88,8 +88,14 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         }
 
-        controllerConnector = new MqttConnector(IPAddress, userName, userPassword);
-        isConnect = controllerConnector.connect();
+
+        if (foreGroundService.auto != null) {
+            controllerConnector = foreGroundService.auto;
+            isConnect = controllerConnector.connect();
+        } else {
+            foreGroundService.makeConnect(IPAddress,userName,userPassword);
+            controllerConnector = foreGroundService.auto;
+        }
 
         controllerConnector.subscribe("window/auto_motor_request");
         String autoFlag = auto.getString("auto", "false");
@@ -154,6 +160,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "true");
                     editor.apply();
+                    isConnect = foreGroundService.callDisconnect();
                     startService(serviceIntent);
                 }else{
                     String topic = "window/auto_motor_request";
@@ -162,6 +169,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     editor.putString("auto", "false");
                     editor.apply();
                     stopService(serviceIntent);
+                    isConnect = controllerConnector.connect();
                 }
             }
         });
@@ -204,7 +212,6 @@ public class windowControllerActivity extends AppCompatActivity {
 
         //뒤로가기 버튼
         backBtn.setOnClickListener(v ->{
-            controllerConnector.disconnect();
             multiThreadRun = false;
 //            startActivity(new Intent(this, HomeActivity.class));
             finish();
@@ -270,7 +277,7 @@ public class windowControllerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        controllerConnector.disconnect();
+        foreGroundService.callDisconnect();
         multiThreadRun = false;
 //        startActivity(new Intent(this, HomeActivity.class));
         finish();
