@@ -108,7 +108,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
     }
 
     public static String getAddressFromLocation(Context context, double latitude, double longitude) {
-        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        Geocoder geocoder = new Geocoder(context, Locale.KOREA);
         String result = "주소를 찾을 수 없습니다.";
 
         try {
