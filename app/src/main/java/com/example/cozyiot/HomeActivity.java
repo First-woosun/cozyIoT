@@ -99,7 +99,7 @@ public class HomeActivity extends AppCompatActivity {
 
             loadWeatherFromSavedLocation(latitude, longtitude);
         } else {
-            cityName.setText("도시가 설정되지 않았습니다.");
+            cityName.setText("???");
             weatherStatus.setVisibility(INVISIBLE);
             temperature.setText("0°C");
         }
@@ -228,11 +228,20 @@ public class HomeActivity extends AppCompatActivity {
                     reader.close();
 
                     JSONObject response = new JSONObject(result.toString());
-                    String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
+                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
                     double temp = response.getJSONObject("main").getDouble("temp");
 
-                    String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
                     String temp_now = temp+"°C";
+
+                    if(weatherId < 600 && weatherId >= 200){
+                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
+                    } else if (weatherId >= 600 && weatherId <700) {
+                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
+                    } else if (weatherId > 800){
+                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
+                    } else {
+                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
+                    }
 
                     runOnUiThread(() -> temperature.setText(temp_now));
 
