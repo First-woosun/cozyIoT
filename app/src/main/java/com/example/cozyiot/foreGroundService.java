@@ -142,6 +142,7 @@ public class foreGroundService extends Service {
                 } catch (Exception e) {
                     e.printStackTrace();
                     auto.disconnect();
+                    windowControllerActivity.reconnect();
                     break;
                 }
             }

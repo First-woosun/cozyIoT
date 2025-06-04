@@ -117,6 +117,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     Intent serviceIntent = new Intent(context, foreGroundService.class);
+                    Intent controllerIntent = new Intent(context, windowControllerActivity.class);
                     if(isChecked){
                         String topic = "window/auto_motor_request";
                         String message = "true";
@@ -131,6 +132,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                         editor.putString("auto", "false");
                         editor.apply();
                         context.stopService(serviceIntent);
+
                     }
                 }
             });

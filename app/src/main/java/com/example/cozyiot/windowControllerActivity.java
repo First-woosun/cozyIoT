@@ -49,7 +49,7 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String huminity;
     private static String temperature;;
 
-    private MqttConnector controllerConnector;
+    private static MqttConnector controllerConnector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -168,8 +168,15 @@ public class windowControllerActivity extends AppCompatActivity {
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "false");
                     editor.apply();
+                    try {
+                        Log.d("sleep", "잠깐 자쇼 ㅋㅋ");
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     stopService(serviceIntent);
                     isConnect = controllerConnector.connect();
+                    Log.d("manual", "conncet");
                 }
             }
         });
@@ -282,5 +289,9 @@ public class windowControllerActivity extends AppCompatActivity {
 //        startActivity(new Intent(this, HomeActivity.class));
         finish();
         super.onBackPressed();
+    }
+
+    public static void reconnect(){
+        controllerConnector.connect();
     }
 }
