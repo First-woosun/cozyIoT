@@ -84,7 +84,7 @@
                         android:layout_marginBottom="10dp"
                         android:text="24°C"
                         android:textColor="#ffffff"
-                        android:textSize="40sp" />
+                        android:textSize="30sp" />
                 </LinearLayout>
 
             </LinearLayout>
