@@ -16,20 +16,21 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.widget.*;
 
 import com.example.cozyiot.func.MqttConnector;
 import com.google.android.material.navigation.NavigationView;
-
+import com.google.gson.reflect.TypeToken;
 import org.json.JSONObject;
-
+import com.google.gson.Gson;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.lang.reflect.Type;
 public class HomeActivity extends AppCompatActivity {
 
     private MqttConnector homeConnector;
@@ -110,9 +111,18 @@ public class HomeActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        Type type = new TypeToken<List<machineData>>() {}.getType();
+        List<machineData> machineDataList;
+        SharedPreferences prefs = getSharedPreferences("MachinePrefs", MODE_PRIVATE);
+        String json = prefs.getString("machineList", null);
+        Gson gson = new Gson();
 
-        machineDataList = new ArrayList<>();
-        machineDataList.add(new machineData("window"));
+        if (json != null) {
+            machineDataList = gson.fromJson(json, type);
+        } else {
+            machineDataList = new ArrayList<>();
+            machineDataList.add(new machineData("window")); // 기본값
+        }
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
         machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
         recyclerView.setAdapter(machineDataAdapter);
@@ -120,6 +130,12 @@ public class HomeActivity extends AppCompatActivity {
         machineDataAdapter.setOnAddClickListener(() -> {
             // 새 기기 리스트에 추가
             machineDataList.add(new machineData("새 기기"));
+            for (machineData data : machineDataAdapter.machineDataList) {
+                Log.d("MachineList", "이름: " + data.getMachineName());
+            }
+
+            machineDataAdapter.saveMachineList();
+
             // 어댑터에 알리기 - 새 항목 추가됨
             machineDataAdapter.notifyItemInserted(machineDataList.size() - 1);
         });
@@ -189,12 +205,6 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-
-        machineDataList = new ArrayList<>();
-        machineDataList.add(new machineData("window"));
-        // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
-        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
-        recyclerView.setAdapter(machineDataAdapter);
         city = location.getString("cityName", "");
         latitude = location.getFloat("latitude", 0f);
         longtitude = location.getFloat("longtitude", 0f);
@@ -204,6 +214,7 @@ public class HomeActivity extends AppCompatActivity {
 
         super.onResume();
     }
+
 
     private void loadWeatherFromSavedLocation(float lat, float lon) {
         String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";

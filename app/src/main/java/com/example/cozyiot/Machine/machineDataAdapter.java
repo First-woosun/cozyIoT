@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +44,8 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private int addClickCount = 1;
     private Context context;
     private Boolean adminFlag;
-    private List<machineData> machineDataList;
+    public List<machineData> machineDataList;
+
     private final Gson gson = new Gson();
 
     public interface OnAddClickListener {
@@ -59,18 +61,12 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public machineDataAdapter(Context context, Boolean adminFlag, List<machineData> machineDataList) {
         this.context = context;
         this.adminFlag = adminFlag;
+        this.machineDataList = machineDataList;
 
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         addClickCount = prefs.getInt(KEY_ADD_CLICK_COUNT, 1);
-
-        String json = prefs.getString(KEY_MACHINE_LIST, null);
-        if (json != null) {
-            Type type = new TypeToken<List<machineData>>() {}.getType();
-            this.machineDataList = gson.fromJson(json, type);
-        } else {
-            this.machineDataList = machineDataList;
-        }
     }
+
 
     @Override
     public int getItemCount() {
@@ -147,10 +143,6 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 remove(position);
             });
 
-//            machineHolder.itemView.setOnLongClickListener(v -> {
-//                remove(position);
-//                return true;
-//            });
 
         } else if (holder instanceof AddViewHolder) {
             AddViewHolder addHolder = (AddViewHolder) holder;
@@ -159,18 +151,18 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             addHolder.cardInnerLayout.setBackgroundColor(cardColors[colorIndex]);
 
             addHolder.itemView.setOnClickListener(v -> {
-                if (addClickListener != null) {
-                    addClickCount++;
+                addClickCount++;
+                Log.d("AddViewHolder", String.valueOf(addClickCount));
+                //작동확인
+                SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putInt(KEY_ADD_CLICK_COUNT, addClickCount);
+                editor.apply();
+                addClickListener.onAddClicked();
+                saveMachineList();
+                notifyDataSetChanged();
 
-                    SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putInt(KEY_ADD_CLICK_COUNT, addClickCount);
-                    editor.apply();
 
-                    addClickListener.onAddClicked();
-                    saveMachineList();
-                    notifyItemChanged(getItemCount() - 1);
-                }
             });
         }
     }
@@ -178,6 +170,11 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     public void remove(int position) {
         try {
             machineDataList.remove(position);
+            addClickCount--;
+            SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putInt(KEY_ADD_CLICK_COUNT, addClickCount);
+            editor.apply();
             notifyItemRemoved(position);
             saveMachineList();
         } catch (IndexOutOfBoundsException e) {
@@ -185,7 +182,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-    private void saveMachineList() {
+    public void saveMachineList() {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         String json = gson.toJson(machineDataList);
