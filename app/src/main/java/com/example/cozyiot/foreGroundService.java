@@ -40,6 +40,9 @@ public class foreGroundService extends Service {
     private float lat;
     private float lon;
 
+    private SharedPreferences windowstatus;
+    private SharedPreferences.Editor windowEditor;
+
     public foreGroundService() {
     }
 
@@ -62,6 +65,9 @@ public class foreGroundService extends Service {
         SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
         lat = locationPrefs.getFloat("latitude", 0f);
         lon = locationPrefs.getFloat("longtitude", 0f);
+
+        windowstatus = getSharedPreferences("windowPref", MODE_PRIVATE);
+        windowEditor = windowstatus.edit();
 
         createNotification();
         mThread.start();
@@ -133,11 +139,14 @@ public class foreGroundService extends Service {
                     // 자동제어 로직부
                     if (weatherFlag) {
                         auto.publish("window/motor_request", "open");
+                        windowEditor.putBoolean("status", true);
+
                     } else {
                         auto.publish("window/motor_request", "close");
+                        windowEditor.putBoolean("status", false);
                     }
                     
-                    Thread.sleep(10000);
+                    Thread.sleep(60000);
 
                 } catch (Exception e) {
                     e.printStackTrace();

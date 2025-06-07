@@ -21,6 +21,8 @@ public class windowControllerActivity extends AppCompatActivity {
 
     private static SharedPreferences preferences;
     private static SharedPreferences auto;
+    private static SharedPreferences windowStatus;
+    private static SharedPreferences.Editor windowEditor;
     private static SharedPreferences.Editor editor;
     private static String userName;
     private static String userPassword;
@@ -111,36 +113,11 @@ public class windowControllerActivity extends AppCompatActivity {
             autoSwitch.setChecked(false);
         }
 
-        if(isConnect){
-            Thread huminityThread = new Thread(() -> {
-                multiThreadRun = isConnect;
-                Log.i("multiThread", "start multiThread");
-                while (multiThreadRun) {
-                    controllerConnector.subscribe("pico/dht22");
-                    String JsonMessage = controllerConnector.getLatestMessage();
+        startHuminityThread();
 
-                    try {
-                        JSONObject jsonObject = new JSONObject(JsonMessage);
-                        temperature = jsonObject.getString("temp");
-                        huminity = jsonObject.getString("hum") + "%";
-
-                        runOnUiThread(() -> huminityView.setText(huminity));
-                    } catch (JSONException e) {
-                        runOnUiThread(() -> huminityView.setText("데이터 오류"));
-                    } catch (NullPointerException e) {
-                        runOnUiThread(() -> huminityView.setText("0%"));
-                    }
-
-                    try {
-                        Thread.sleep(60000);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                }
-                Log.i("multiThread", "exit multiThread successfully");
-            });
-            huminityThread.start(); // 새 스레드를 시작
-        }
+        windowStatus = getSharedPreferences("windowPrefs", MODE_PRIVATE);
+        windowEditor = windowStatus.edit();
+        isopen = windowStatus.getBoolean("status", false);
 
         if(!isopen){
             windowState.setImageResource(R.drawable.window_status_close);
@@ -161,6 +138,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     editor.putString("auto", "true");
                     editor.apply();
                     isConnect = foreGroundService.callDisconnect();
+//                    multiThreadRun = false;
                     startService(serviceIntent);
                 }else{
                     String topic = "window/auto_motor_request";
@@ -176,6 +154,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     }
                     stopService(serviceIntent);
                     isConnect = controllerConnector.connect();
+//                    startHuminityThread();
                     Log.d("manual", "conncet");
                 }
             }
@@ -192,6 +171,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     isopen = true;
                     Toast.makeText(this, "창문을 개방합니다.", Toast.LENGTH_SHORT).show();
                     windowState.setImageResource(R.drawable.window_status_open);
+                    windowEditor.putBoolean("status", true);
                 } else {
                     Toast.makeText(this, "이미 창문이 열려있습니다.", Toast.LENGTH_SHORT).show();
                 }
@@ -209,6 +189,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     isopen = false;
                     Toast.makeText(this, "창문을 폐쇠합니다.", Toast.LENGTH_SHORT).show();
                     windowState.setImageResource(R.drawable.window_status_close);
+                    windowEditor.putBoolean("status", false);
                 } else {
                     Toast.makeText(this, "이미 창문이 닫혀있습니다.", Toast.LENGTH_SHORT).show();
                 }
@@ -269,7 +250,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 JSONObject response = new JSONObject(result.toString());
                 String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
                 double temp = response.getJSONObject("main").getDouble("temp");
-                String location = response.getJSONArray("city").getJSONObject(0).getString("description");
+//                String location = response.getJSONArray("city").getJSONObject(0).getString("description");
 
                 String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
 
@@ -294,4 +275,38 @@ public class windowControllerActivity extends AppCompatActivity {
     public static void reconnect(){
         controllerConnector.connect();
     }
+
+    private void startHuminityThread() {
+        Thread thread = new Thread(() -> {
+            multiThreadRun = true;
+            Log.i("multiThread", "start multiThread");
+            controllerConnector.subscribe("pico/dht22");
+
+            while (multiThreadRun) {
+                Log.i("thread", "run");
+                String JsonMessage = controllerConnector.getLatestMessage();
+
+                try {
+                    JSONObject jsonObject = new JSONObject(JsonMessage);
+                    temperature = jsonObject.getString("temp");
+                    huminity = jsonObject.getString("hum") + "%";
+
+                    runOnUiThread(() -> huminityView.setText(huminity));
+                } catch (JSONException e) {
+                    runOnUiThread(() -> huminityView.setText("데이터 오류"));
+                } catch (NullPointerException e) {
+                    runOnUiThread(() -> huminityView.setText("0%"));
+                }
+
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            Log.i("multiThread", "exit multiThread successfully");
+        });
+        thread.start();
+    }
+
 }
