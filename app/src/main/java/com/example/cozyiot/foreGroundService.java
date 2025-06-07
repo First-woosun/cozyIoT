@@ -145,6 +145,24 @@ public class foreGroundService extends Service {
                         auto.publish("window/motor_request", "close");
                         windowEditor.putBoolean("status", false);
                     }
+
+//                    if(huminityFlag){
+//                        if(weatherFlag){
+//                            auto.publish("window/motor_request", "open");
+//                            windowEditor.putBoolean("status", true);
+//                        } else {
+//                            auto.publish("window/motor_request", "close");
+//                            windowEditor.putBoolean("status", false);
+//                        }
+//                    } else {
+//                        if(weatherFlag){
+//                            auto.publish("window/motor_request", "open");
+//                            windowEditor.putBoolean("status", true);
+//                        } else {
+//                            auto.publish("window/motor_request", "close");
+//                            windowEditor.putBoolean("status", false);
+//                        }
+//                    }
                     
                     Thread.sleep(60000);
 
