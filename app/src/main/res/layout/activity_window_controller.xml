@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#fffdef"
+    android:background="#ffffff"
     tools:context=".MainActivity">
 
     <!-- Back Button -->
@@ -13,7 +13,7 @@
         android:id="@+id/btn_back"
         android:layout_width="60dp"
         android:layout_height="40dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="40dp"
         android:layout_marginLeft="20dp"
         android:textStyle="bold"
         android:textSize="20sp"
@@ -38,14 +38,26 @@
 
 
     <ImageView
-        android:id="@+id/window_state"
+        android:id="@+id/window_background"
         android:layout_width="320dp"
         android:layout_height="220dp"
-        android:layout_marginTop="32dp"
-        android:background="@drawable/window_status_close"
+        android:layout_marginTop="70dp"
+        android:background="@drawable/window_background"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_back" />
+
+    <ImageView
+        android:id="@+id/window_state"
+        android:layout_width="170dp"
+        android:layout_height="192.5dp"
+        android:layout_marginTop="80dp"
+        android:background="@drawable/window_status"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.775"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_back" />
 
@@ -57,7 +69,7 @@
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/window_state">
+        app:layout_constraintTop_toBottomOf="@id/window_background">
 
         <TextView
             android:layout_width="wrap_content"
