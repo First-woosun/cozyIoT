@@ -50,7 +50,7 @@ public class windowControllerActivity extends AppCompatActivity {
 
     private static String huminity;
     private static String temperature;;
-
+    private boolean moving = false;  // 또는 false
     private static MqttConnector controllerConnector;
 
     @Override
@@ -65,7 +65,6 @@ public class windowControllerActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         adminFlag = intent.getBooleanExtra("admin", false);
-
         openBtn = findViewById(R.id.btn_open);
         closeBtn = findViewById(R.id.btn_close);
         windowState = findViewById(R.id.window_state);
@@ -97,6 +96,7 @@ public class windowControllerActivity extends AppCompatActivity {
         } else {
             foreGroundService.makeConnect(IPAddress,userName,userPassword);
             controllerConnector = foreGroundService.auto;
+            isConnect = controllerConnector.connect();
         }
 
         controllerConnector.subscribe("window/auto_motor_request");
@@ -120,9 +120,14 @@ public class windowControllerActivity extends AppCompatActivity {
         isopen = windowStatus.getBoolean("status", false);
 
         if(!isopen){
-            windowState.setImageResource(R.drawable.window_status_close);
+            if(moving == false){
+                set_status_window("default");
+            }
+
         } else {
-            windowState.setImageResource(R.drawable.window_status_open);
+            if(moving == false){
+                set_status_window("open");
+            }
         }
 
 
@@ -170,7 +175,11 @@ public class windowControllerActivity extends AppCompatActivity {
                     controllerConnector.publish(topic, message);
                     isopen = true;
                     Toast.makeText(this, "창문을 개방합니다.", Toast.LENGTH_SHORT).show();
-                    windowState.setImageResource(R.drawable.window_status_open);
+                    if(moving == false){
+                        set_status_window("open");
+                    }
+
+
                     windowEditor.putBoolean("status", true);
                 } else {
                     Toast.makeText(this, "이미 창문이 열려있습니다.", Toast.LENGTH_SHORT).show();
@@ -186,9 +195,10 @@ public class windowControllerActivity extends AppCompatActivity {
                     String topic = "window/motor_request";
                     String message = "close";
                     controllerConnector.publish(topic, message);
-                    isopen = false;
                     Toast.makeText(this, "창문을 폐쇠합니다.", Toast.LENGTH_SHORT).show();
-                    windowState.setImageResource(R.drawable.window_status_close);
+                    if(moving == false){
+                        set_status_window("close");
+                    }
                     windowEditor.putBoolean("status", false);
                 } else {
                     Toast.makeText(this, "이미 창문이 닫혀있습니다.", Toast.LENGTH_SHORT).show();
@@ -210,7 +220,40 @@ public class windowControllerActivity extends AppCompatActivity {
             startActivity(mapIntent);
         });
     }
-
+    private void set_status_window(String status) {
+        if (windowState != null) {
+            if (status == "open") {
+                float deltaX = -250f; // 오른쪽으로 200픽셀 이동
+                windowState.animate()
+                        .translationXBy(deltaX)
+                        .setDuration(3000)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                isopen = true;
+                                moving = false;  // 3초 애니메이션 끝난 후 실행
+                            }
+                        })
+                        .start();
+            } else if (status == "default") {
+                return; // 아무것도 안 함
+            } else {
+                float deltaX = 250f; // 왼쪽으로 200픽셀 이동
+                windowState.animate()
+                        .translationXBy(deltaX)
+                        .setDuration(3000)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                isopen = false;
+                                moving = false;  // 3초 애니메이션 끝난 후 실행
+                            }
+                        })
+                        .start();
+            }
+        }
+        moving = true;
+    }
     @Override
     protected void onResume() {
         super.onResume();
