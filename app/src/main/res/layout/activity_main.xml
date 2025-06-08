@@ -6,32 +6,18 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF7E6"
     tools:context=".MainActivity">
-
 
     <ImageView
         android:id="@+id/backgroundImage"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:scaleType="centerCrop"
-        android:background="#ffffff"
+        android:background="#EFF1F0"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
-    <ImageView
-        android:id="@+id/imageViewLogo"
-        android:layout_width="100dp"
-        android:layout_height="180dp"
-        android:layout_marginTop="70dp"
-        android:contentDescription="앱 로고"
-        android:src="@drawable/ic_app_logo"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
 
     <GridLayout
         android:id="@+id/gridLayoutMain"
@@ -39,35 +25,36 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="40dp"
         android:layout_marginEnd="40dp"
-        android:background="@drawable/rounded_background"
         android:columnCount="1"
         android:paddingStart="20dp"
         android:paddingTop="30dp"
         android:paddingEnd="20dp"
         android:paddingBottom="50dp"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imageViewLogo">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.4">
 
 
         <ImageView
-            android:id="@+id/imageViewLogin"
+            android:id="@+id/login_text"
             android:layout_width="80dp"
-            android:layout_height="70dp"
+            android:layout_height="80dp"
             android:layout_gravity="center"
-            android:contentDescription="로그인 이미지"
-            android:src="@drawable/login_img" />
+            android:layout_marginBottom="50dp"
+            android:textStyle="bold"
+            android:background="@drawable/ic_app_logo2"
+            android:textSize="30dp"/>
 
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="16dp"
-            android:background="#D3D3D3"
             android:gravity="center_vertical"
             android:orientation="horizontal"
+            android:background="#FFFFFF"
             android:padding="8dp">
 
             <ImageView
@@ -95,7 +82,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginTop="12dp"
-            android:background="#D3D3D3"
+            android:background="#FFFFFF"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="8dp">
@@ -127,10 +114,9 @@
         android:layout_marginStart="40dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="40dp"
-        android:background="@drawable/login_btn_bg"
-        android:text="로그인"
+        android:background="#89f0d8"
+        android:text="Login"
         android:textColor="#FFF"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -143,10 +129,9 @@
         android:layout_marginStart="40dp"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="40dp"
-        android:background="@drawable/login_btn_bg"
-        android:text="회원가입"
+        android:background="#89f0d8"
+        android:text="Sign Up"
         android:textColor="#FFF"
-        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
