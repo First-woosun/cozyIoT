@@ -29,10 +29,10 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String IPAddress;
 
     //안드로이드 세그먼트 선언
-    Button openBtn; Button closeBtn; Button btnConfirmLocation;
+    Button openBtn; Button closeBtn;
     Switch autoSwitch;
     ImageView windowState;
-    TextView huminityView, backBtn, weatherView;
+    TextView huminityView, backBtn;
 
     //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
     //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
@@ -71,8 +71,7 @@ public class windowControllerActivity extends AppCompatActivity {
         huminityView = findViewById(R.id.huminity_view);
         backBtn = findViewById(R.id.btn_back);
         autoSwitch = findViewById(R.id.switch_auto);
-        btnConfirmLocation = findViewById(R.id.btn_confirm_location);
-        weatherView = findViewById(R.id.weather_view);
+
 
         if(adminFlag){
             userName = "cozydow";
@@ -215,10 +214,7 @@ public class windowControllerActivity extends AppCompatActivity {
             finish();
         });
 
-        btnConfirmLocation.setOnClickListener(v -> {
-            Intent mapIntent = new Intent(windowControllerActivity.this, MapActivity.class);
-            startActivity(mapIntent);
-        });
+
     }
     private void set_status_window(String status) {
         if (windowState != null) {
@@ -254,57 +250,7 @@ public class windowControllerActivity extends AppCompatActivity {
         }
         moving = true;
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
 
-        SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
-        float latitude = locationPrefs.getFloat("latitude", 0f);
-        float longitude = locationPrefs.getFloat("longitude", 0f);
-
-        if (latitude != 0f && longitude != 0f) {
-            loadWeatherFromSavedLocation(latitude, longitude);
-        } else {
-            weatherView.setText("위치 정보가 없습니다.");
-        }
-    }
-
-    private void loadWeatherFromSavedLocation(float lat, float lon) {
-        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
-                "&lon=" + lon +
-                "&appid=" + apiKey +
-                "&units=metric&lang=kr";
-
-        new Thread(() -> {
-            try {
-                URL requestUrl = new URL(url);
-                HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-                conn.setRequestMethod("GET");
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                StringBuilder result = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    result.append(line);
-                }
-                reader.close();
-
-                JSONObject response = new JSONObject(result.toString());
-                String weather = response.getJSONArray("weather").getJSONObject(0).getString("description");
-                double temp = response.getJSONObject("main").getDouble("temp");
-//                String location = response.getJSONArray("city").getJSONObject(0).getString("description");
-
-                String finalText = "날씨: " + weather + "\n온도: " + temp + "°C";
-
-                runOnUiThread(() -> weatherView.setText(finalText));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> weatherView.setText("날씨 정보를 불러올 수 없습니다."));
-            }
-        }).start();
-    }
 
     @Override
     public void onBackPressed() {
