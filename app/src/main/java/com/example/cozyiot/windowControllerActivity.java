@@ -2,6 +2,7 @@ package com.example.cozyiot;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,7 +28,21 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String userName;
     private static String userPassword;
     private static String IPAddress;
-
+    private final int[] tempColors = {
+            Color.parseColor("#f88f59"),
+            Color.parseColor("#f97247"),
+            Color.parseColor("#fb5635"),
+            Color.parseColor("#fc3924"),
+            Color.parseColor("#fe1d12"),
+            Color.parseColor("#ff0000"),
+    };
+    private final int[] waterColors = {
+            Color.parseColor("#94d1e6"),
+            Color.parseColor("#5fb3d9"),
+            Color.parseColor("#2a96cc"),
+            Color.parseColor("#0a78bf"),
+            Color.parseColor("#000080"),
+    };
     //안드로이드 세그먼트 선언
     Button openBtn; Button closeBtn;
     Switch autoSwitch;
@@ -52,7 +67,10 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String temperature;;
     private boolean moving = false;  // 또는 false
     private static MqttConnector controllerConnector;
-
+    private int dpToPx(float dp) {
+        float scale = getResources().getDisplayMetrics().density;
+        return (int) (dp * scale + 0.5f);
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -280,7 +298,85 @@ public class windowControllerActivity extends AppCompatActivity {
                     temperature = jsonObject.getString("temp");
                     huminity = jsonObject.getString("hum") + "%";
 
-                    runOnUiThread(() -> huminityView.setText(huminity));
+                    runOnUiThread(() -> {
+                        huminityView.setText(huminity);
+
+                        // 습도 이미지 처리
+                        ImageView humidityImage = findViewById(R.id.humidityImage);
+                        int humValue = 0;
+                        try {
+                            humValue = Integer.parseInt(huminity.replace("%", ""));
+                        } catch (NumberFormatException e) {
+                            humValue = 0;
+                        }
+
+                        if (humValue < 10) {
+                            humidityImage.setImageResource(R.drawable.sup1); // 낮음
+                            humidityImage.setBackgroundColor(waterColors[0]);
+                            huminityView.setTextColor(waterColors[0]);
+                        } else if (humValue < 20) {
+                            humidityImage.setImageResource(R.drawable.sup2);
+                            humidityImage.setBackgroundColor(waterColors[1]);
+                            huminityView.setTextColor(waterColors[1]);
+                        } else if (humValue < 40) {
+                            humidityImage.setImageResource(R.drawable.sup3);
+                            humidityImage.setBackgroundColor(waterColors[2]);
+                            huminityView.setTextColor(waterColors[2]);
+                        } else if (humValue < 60) {
+                            humidityImage.setImageResource(R.drawable.sup4);
+                            humidityImage.setBackgroundColor(waterColors[3]);
+                            huminityView.setTextColor(waterColors[3]);
+                        } else {
+                            humidityImage.setImageResource(R.drawable.sup5); // 높음
+                            humidityImage.setBackgroundColor(waterColors[4]);
+                            huminityView.setTextColor(waterColors[4]);
+                        }
+
+                        // 온도 텍스트 및 이미지 처리 추가
+                        TextView temperatureView = findViewById(R.id.temperature_view); // 온도 표시용 TextView (레이아웃에 있어야 함)
+                        ImageView temperatureImage = findViewById(R.id.temperatureImage); // 온도 이미지 표시용 ImageView (레이아웃에 있어야 함)
+                        ImageView overlayImage = findViewById(R.id.overlayImage);
+                        FrameLayout frameLayout = findViewById(R.id.temperatureImageframe);
+                        float tempValue = 0f;
+                        try {
+                            tempValue = Float.parseFloat(temperature);
+                        } catch (NumberFormatException e) {
+                            tempValue = 0f;
+                        }
+
+                        temperatureView.setText(String.format("%.1f°C", tempValue));FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
+                        FrameLayout.LayoutParams param = (FrameLayout.LayoutParams) overlayImage.getLayoutParams();
+
+
+                        if (tempValue <= 10) {
+                            param.height = dpToPx(45);
+                            frameLayout.setBackgroundColor(tempColors[0]);
+                            temperatureView.setTextColor(tempColors[0]);
+                        } else if (tempValue <= 15) {
+                            param.height = dpToPx(35);
+                            frameLayout.setBackgroundColor(tempColors[1]);
+                            temperatureView.setTextColor(tempColors[1]);
+                        } else if (tempValue <= 20) {
+                            param.height = dpToPx(25);
+                            frameLayout.setBackgroundColor(tempColors[2]);
+                            temperatureView.setTextColor(tempColors[2]);
+                        } else if (tempValue <= 25) {
+                            param.height = dpToPx(15);
+                            frameLayout.setBackgroundColor(tempColors[3]);
+                            temperatureView.setTextColor(tempColors[3]);;
+                        } else if (tempValue <= 30) {
+                            param.height = dpToPx(5);
+                            frameLayout.setBackgroundColor(tempColors[4]);
+                            temperatureView.setTextColor(tempColors[4]);
+                        } else {
+                            param.height = dpToPx(0);
+                            frameLayout.setBackgroundColor(tempColors[5]);
+                            temperatureView.setTextColor(tempColors[5]);
+                        }
+
+                        temperatureImage.setLayoutParams(params);
+                    });
+
                 } catch (JSONException e) {
                     runOnUiThread(() -> huminityView.setText("데이터 오류"));
                 } catch (NullPointerException e) {
@@ -288,7 +384,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 }
 
                 try {
-                    Thread.sleep(60000);
+                    Thread.sleep(10000);
                 } catch (InterruptedException e) {
                     break;
                 }
