@@ -1,6 +1,7 @@
 package com.example.cozyiot;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -64,7 +65,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
                 Toast.makeText(this, "위치 저장 완료", Toast.LENGTH_SHORT).show();
 
-                // 현재 액티비티 종료 (필요 시 다른 화면으로 이동 가능)
+                // UserInfoActivity로 이동
+                Intent intent = new Intent(MapActivity.this, UserInfoConfigActivity.class);
+                startActivity(intent);
+
+                // 현재 액티비티 종료 (선택 사항)
                 finish();
             } else {
                 Toast.makeText(this, "지도를 눌러 위치를 먼저 선택하세요.", Toast.LENGTH_SHORT).show();
