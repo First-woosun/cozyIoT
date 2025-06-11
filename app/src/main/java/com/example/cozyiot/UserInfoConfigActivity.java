@@ -67,10 +67,11 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         }
 
         if(!location.getAll().isEmpty()){
-            float latitude = location.getFloat("latitude", 0f);
-            float longitude = location.getFloat("longitude", 0f);
-            String location = String.valueOf(latitude) + ", "+ String.valueOf(longitude);
-            locationInput.setText(location);
+//            float latitude = location.getFloat("latitude", 0f);
+//            float longitude = location.getFloat("longitude", 0f);
+            String cityName = location.getString("cityName", "");
+//            String location = String.valueOf(latitude) + ", "+ String.valueOf(longitude);
+            locationInput.setText(cityName);
         }
         
         //위치 정보 설정 버튼
