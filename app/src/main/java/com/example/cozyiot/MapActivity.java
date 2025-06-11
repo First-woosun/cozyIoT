@@ -65,10 +65,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
                 Toast.makeText(this, "위치 저장 완료", Toast.LENGTH_SHORT).show();
 
-                // UserInfoActivity로 이동
-                Intent intent = new Intent(MapActivity.this, UserInfoConfigActivity.class);
-                startActivity(intent);
-
                 // 현재 액티비티 종료 (선택 사항)
                 finish();
             } else {

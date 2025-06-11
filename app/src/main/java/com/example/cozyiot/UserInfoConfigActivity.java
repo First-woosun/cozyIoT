@@ -20,6 +20,8 @@ public class UserInfoConfigActivity extends AppCompatActivity {
     private SharedPreferences preferences;
     private SharedPreferences location;
 
+    private SharedPreferences temp;
+
     EditText userNameInput; EditText userPasswordInput; EditText wifiNameInput; EditText wifiPasswordInput; EditText IPAddressInput; EditText locationInput;
     Button saveBtn; Button resetBtn; Button locationBtn;
     TextView backBtn;
@@ -53,6 +55,8 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         location = getSharedPreferences("location_prefs", MODE_PRIVATE);
+        temp = getSharedPreferences("temp", MODE_PRIVATE);
+        SharedPreferences.Editor tempEdit =  temp.edit();
 
         infoConnector = new MqttConnector("218.49.196.80:1883", "cozydow", "1234");
         infoConnector.connect();
@@ -76,8 +80,22 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         
         //위치 정보 설정 버튼
         locationBtn.setOnClickListener(v ->{
+            userName = userNameInput.getText().toString();
+            userPassword = userPasswordInput.getText().toString();
+            wifiName = wifiNameInput.getText().toString();
+            wifiPassword = wifiPasswordInput.getText().toString();
+            IPAddress = IPAddressInput.getText().toString();
+
+            tempEdit.putString("userName", userName);
+            tempEdit.putString("userPassword", userPassword);
+            tempEdit.putString("wifiName", wifiName);
+            tempEdit.putString("wifiPassword", wifiPassword);
+            tempEdit.putString("IPAddress", IPAddress);
+
+            tempEdit.apply();
+
             startActivity(new Intent(this, MapActivity.class));
-            finish();
+
         });
 
         //사용자 정보 저장 버튼
@@ -114,6 +132,8 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 infoConnector.publish("userInfo/IPAddress", IPAddress);
                 infoConnector.publish("userInfo/config", "save");
                 infoConnector.disconnect();
+
+                tempEdit.clear();
 
             } else {
                 Toast.makeText(this, "모든 정보를 입력해주세요.", Toast.LENGTH_SHORT).show();
@@ -152,5 +172,25 @@ public class UserInfoConfigActivity extends AppCompatActivity {
     public void onBackPressed() {
         infoConnector.disconnect();
         super.onBackPressed();
+    }
+
+    @Override
+    protected void onResume() {
+        if(!preferences.getAll().isEmpty() && !location.getAll().isEmpty()){
+            userNameInput.setText(preferences.getString("userName", ""));
+            userPasswordInput.setText(preferences.getString("userPassword", ""));
+            wifiNameInput.setText(preferences.getString("wifiName", ""));
+            wifiPasswordInput.setText(preferences.getString("wifiPassword", ""));
+            IPAddressInput.setText(preferences.getString("IPAddress",""));
+            locationInput.setText(location.getString("cityName", ""));
+        } else {
+            userNameInput.setText(temp.getString("userName", ""));
+            userPasswordInput.setText(temp.getString("userPassword", ""));
+            wifiNameInput.setText(temp.getString("wifiName", ""));
+            wifiPasswordInput.setText(temp.getString("wifiPassword", ""));
+            IPAddressInput.setText(temp.getString("IPAddress",""));
+            locationInput.setText(location.getString("cityName", ""));
+        }
+        super.onResume();
     }
 }
