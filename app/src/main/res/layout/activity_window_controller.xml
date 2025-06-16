@@ -169,8 +169,8 @@
 
     <TextView
         android:id="@+id/huminity_view"
-        android:layout_width="30dp"
-        android:layout_height="38dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:layout_marginTop="-80dp"
         android:layout_marginStart="60dp"
         android:text="0"

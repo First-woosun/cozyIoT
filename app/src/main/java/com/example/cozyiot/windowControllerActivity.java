@@ -297,6 +297,7 @@ public class windowControllerActivity extends AppCompatActivity {
                     JSONObject jsonObject = new JSONObject(JsonMessage);
                     temperature = jsonObject.getString("temp");
                     huminity = jsonObject.getString("hum") + "%";
+                    Log.i("threadcheck","humtemp");
 
                     runOnUiThread(() -> {
                         huminityView.setText(huminity);
@@ -384,7 +385,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 }
 
                 try {
-                    Thread.sleep(10000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     break;
                 }

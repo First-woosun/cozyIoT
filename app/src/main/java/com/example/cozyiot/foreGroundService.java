@@ -122,33 +122,37 @@ public class foreGroundService extends Service {
                     int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
                     double temp = response.getJSONObject("main").getDouble("temp");
 
-                    // 온습도 데이터 load
+                    // 온습도 처리
                     auto.subscribe("pico/dht22");
                     String jsonMessage = auto.getLatestMessage();
-                    if(!isStringEmpty(jsonMessage)){
-                        JSONObject humAndTemp = new JSONObject(jsonMessage);
-                        String huminityValue = humAndTemp.getString("hum");
-                        String temperatureValue = humAndTemp.getString("temp");
-                        huminity = Float.parseFloat(huminityValue);
-                        temperature = Float.parseFloat(temperatureValue);
-                    }else{
-                        huminity = 0.0f;
-                        temperature = 0.0f;
+                    huminity = 0.0f;
+                    temperature = 0.0f;
+                    if (!isStringEmpty(jsonMessage)) {
+                        try {
+                            JSONObject json = new JSONObject(jsonMessage);
+                            if (json.has("hum") && json.has("temp")) {
+                                huminity = (float) json.getDouble("hum");
+                                temperature = (float) json.getDouble("temp");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "JSON parsing error for dht22: " + e.getMessage());
+                        }
                     }
 
-                    Log.i("data", "hum");
-
-                    // 강우 여부 로드
+// 강우 여부 처리
                     auto.subscribe("pico/rain");
                     jsonMessage = auto.getLatestMessage();
-
-                    if(!isStringEmpty(jsonMessage)){
-                        JSONObject isRain = new JSONObject(jsonMessage);
-                        rain = isRain.getString("rain");
-                    } else {
-                        rain = "1";
+                    rain = "1"; // default
+                    if (!isStringEmpty(jsonMessage)) {
+                        try {
+                            JSONObject json = new JSONObject(jsonMessage);
+                            if (json.has("rain")) {
+                                rain = json.getString("rain");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "JSON parsing error for rain: " + e.getMessage());
+                        }
                     }
-
 
                     Log.i("data", "rain");
 
@@ -204,7 +208,7 @@ public class foreGroundService extends Service {
                         }
                     }
                     
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
 
                 } catch (Exception e) {
                     e.printStackTrace();
