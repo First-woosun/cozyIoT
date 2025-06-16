@@ -90,11 +90,11 @@ public class foreGroundService extends Service {
             boolean weatherFlag = false;
             boolean huminityFlag = false;
             boolean temperatureFlag = false;
+            boolean rainFlag = false;
 
             url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
 
             auto.connect();
-            auto.subscribe("pico/dht22");
 
             while (true){
                 try {
@@ -115,8 +115,21 @@ public class foreGroundService extends Service {
                     //자동제어에 필요한 데이터 필드
                     int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
                     double temp = response.getJSONObject("main").getDouble("temp");
-//                    String huminityValue = auto.getLatestMessage();
-//                    float huminity = Float.parseFloat(huminityValue);
+
+                    // 온습도 데이터 load
+                    auto.subscribe("pico/dht22");
+                    String jsonMessage = auto.getLatestMessage();
+                    JSONObject humAndTemp = new JSONObject(jsonMessage);
+                    String huminityValue = humAndTemp.getString("hum");
+                    String temperatureValue = humAndTemp.getString("temp");
+                    float huminity = Float.parseFloat(huminityValue);
+                    float temperature = Float.parseFloat(temperatureValue);
+
+                    // 강우 여부 로드
+                    auto.subscribe("pico/rain");
+                    jsonMessage = auto.getLatestMessage();
+                    JSONObject isRain = new JSONObject(jsonMessage);
+                    String rain = isRain.getString("rain");
 
                     //날씨에 따른 창문 개방 여부
                     if (weatherId < 800 && weatherId >= 200) {
@@ -128,43 +141,49 @@ public class foreGroundService extends Service {
                     }
 
                     // 내부 습도에 따른 창문 개방 여부
-//                    if (huminity < 50f || huminity > 60f){
-//                        // 환기 필요
-//                        huminityFlag = true;
-//                    } else {
-//                        // 환기 불필요
-//                        huminityFlag = false;
-//                    }
-                    
-                    // 자동제어 로직부
-                    if (weatherFlag) {
-                        auto.publish("window/motor_request", "open");
-                        windowEditor.putBoolean("status", true);
-
+                    if (huminity < 50f || huminity > 60f){
+                        // 환기 필요
+                        huminityFlag = true;
                     } else {
-                        auto.publish("window/motor_request", "close");
-                        windowEditor.putBoolean("status", false);
+                        // 환기 불필요
+                        huminityFlag = false;
                     }
 
-//                    if(huminityFlag){
-//                        if(weatherFlag){
-//                            auto.publish("window/motor_request", "open");
-//                            windowEditor.putBoolean("status", true);
-//                        } else {
-//                            auto.publish("window/motor_request", "close");
-//                            windowEditor.putBoolean("status", false);
-//                        }
-//                    } else {
-//                        if(weatherFlag){
-//                            auto.publish("window/motor_request", "open");
-//                            windowEditor.putBoolean("status", true);
-//                        } else {
-//                            auto.publish("window/motor_request", "close");
-//                            windowEditor.putBoolean("status", false);
-//                        }
-//                    }
+                    if(rain.equals("0")){
+                        rainFlag = true;
+                    } else {
+                        rainFlag = false;
+                    }
                     
-                    Thread.sleep(60000);
+                    // 자동제어 로직부
+//                    if (weatherFlag) {
+//                        auto.publish("window/motor_request", "open");
+//                        windowEditor.putBoolean("status", true);
+//
+//                    } else {
+//                        auto.publish("window/motor_request", "close");
+//                        windowEditor.putBoolean("status", false);
+//                    }
+
+                    if(huminityFlag){
+                        if(weatherFlag || rainFlag){
+                            auto.publish("window/motor_request", "open");
+                            windowEditor.putBoolean("status", true);
+                        } else {
+                            auto.publish("window/motor_request", "close");
+                            windowEditor.putBoolean("status", false);
+                        }
+                    } else {
+                        if(weatherFlag || rainFlag){
+                            auto.publish("window/motor_request", "open");
+                            windowEditor.putBoolean("status", true);
+                        } else {
+                            auto.publish("window/motor_request", "close");
+                            windowEditor.putBoolean("status", false);
+                        }
+                    }
+                    
+                    Thread.sleep(3000);
 
                 } catch (Exception e) {
                     e.printStackTrace();
