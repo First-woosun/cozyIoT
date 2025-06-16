@@ -291,7 +291,7 @@ public class windowControllerActivity extends AppCompatActivity {
 
             while (multiThreadRun) {
                 Log.i("thread", "run");
-                String JsonMessage = controllerConnector.getLatestMessage();
+                String JsonMessage = controllerConnector.getLatestMessage("pico/dht22");
 
                 try {
                     JSONObject jsonObject = new JSONObject(JsonMessage);
@@ -385,7 +385,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 }
 
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(20000);
                 } catch (InterruptedException e) {
                     break;
                 }
