@@ -58,7 +58,11 @@ public class foreGroundService extends Service {
         String Address = userInfo.getString("IPAddress", "");
         String Name = userInfo.getString("userName", "");
         String Password = userInfo.getString("userPassword", "");
+<<<<<<< Updated upstream
         auto = new MqttConnector(Address, Name, Password);
+=======
+        checkConnect(Address,Name,Password);
+>>>>>>> Stashed changes
 
         SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
         lat = locationPrefs.getFloat("latitude", 0f);
@@ -87,9 +91,15 @@ public class foreGroundService extends Service {
             boolean temperatureFlag = false;
 
             url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
+<<<<<<< Updated upstream
             auto.connect();
             auto.subscribe("pico/dht22");
 
+=======
+
+            callconnect();
+            subwindow();
+>>>>>>> Stashed changes
             while (true){
                 try {
                     URL requestUrl = new URL(url);
@@ -109,8 +119,38 @@ public class foreGroundService extends Service {
                     //자동제어에 필요한 데이터 필드
                     int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
                     double temp = response.getJSONObject("main").getDouble("temp");
+<<<<<<< Updated upstream
 //                    String huminityValue = auto.getLatestMessage();
 //                    float huminity = Float.parseFloat(huminityValue);
+=======
+
+                    // 온습도 데이터 load
+
+                    String jsonMessage = auto.getLatestMessage("pico/dht22");
+                    if (!isStringEmpty(jsonMessage)) {
+                        JSONObject humAndTemp = new JSONObject(jsonMessage);
+                        huminity = (float) humAndTemp.getDouble("hum");
+                        temperature = (float) humAndTemp.getDouble("temp");
+                    }else{
+                        huminity = 0.0f;
+                        temperature = 0.0f;
+                    }
+
+                    Log.i("data", "hum");
+
+                    // 강우 여부 로드
+
+                    String rainMessage = auto.getLatestMessage("pico/rain");
+                    if (!isStringEmpty(rainMessage)) {
+                        JSONObject isRain = new JSONObject(rainMessage);
+                        rain = isRain.getString("rain");
+                    } else {
+                        rain = "1";
+                    }
+
+
+                    Log.i("data", "rain");
+>>>>>>> Stashed changes
 
                     //날씨에 따른 창문 개방 여부
                     if (weatherId < 800 && weatherId >= 200) {
@@ -218,8 +258,35 @@ public class foreGroundService extends Service {
 
         Log.d(TAG, "onDestroy");
     }
+    public static boolean callconnect(){
+        auto.connect();
+        return true;
+    }
+    public static  void subwindow(){
+        auto.subscribe("pico/dht22");
+        auto.subscribe("pico/rain");
+        auto.subscribe("window/auto_motor_request");
+    }
 
     public void callDisconnect(){
         auto.disconnect();
+<<<<<<< Updated upstream
+=======
+        return false;
+    }
+    public static boolean makeConnect(String Address, String Name, String Password) {
+        auto = new MqttConnector(Address, Name, Password);
+        return false;
+    }
+    public static void checkConnect(String Address, String Name, String Password) {
+        if(auto != null){
+        }
+        else{
+            makeConnect(Address,Name,Password);
+        }
+    }
+    static boolean isStringEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+>>>>>>> Stashed changes
     }
 }

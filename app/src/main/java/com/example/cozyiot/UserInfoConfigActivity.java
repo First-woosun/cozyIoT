@@ -123,20 +123,20 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         resetBtn.setOnClickListener(v -> {
             String resetUserName = userNameInput.getText().toString();
             if(!preferences.getAll().isEmpty()){
+
+                infoConnector.publish("userInfo/config" , "reset:");
+                if ( resetUserName != null && ! resetUserName.isEmpty()) {
+                infoConnector.publish( "userInfo/name", resetUserName);
+                }
                 editor.clear();
                 editor.apply();
-
-                infoConnector.publish("reset:" , "userInfo/config");
-                if ( resetUserName != null && ! resetUserName.isEmpty()) {
-                infoConnector.publish( resetUserName, "userInfo/name");
-                }
-                infoConnector.disconnect();
                 userNameInput.setText("");
                 userPasswordInput.setText("");
                 wifiNameInput.setText("");
                 wifiPasswordInput.setText("");
                 IPAddressInput.setText("");
                 locationInput.setText("");
+                infoConnector.disconnect();
             } else {
                 Toast.makeText(this, "저장된 정보가 없습니다.", Toast.LENGTH_SHORT).show();
             }

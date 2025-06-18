@@ -104,7 +104,7 @@ public class HomeActivity extends AppCompatActivity {
             temperature.setText("0°C");
         }
 
-        homeConnector = new MqttConnector(Address, Name, Password);
+        //homeConnector = new MqttConnector(Address, Name, Password);
 
         //machineAddBtn = findViewById(R.id.btn_add_item);
 

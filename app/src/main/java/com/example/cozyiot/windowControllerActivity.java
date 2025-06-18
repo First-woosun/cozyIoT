@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.*;
 import com.example.cozyiot.func.MqttConnector;
@@ -48,9 +51,18 @@ public class windowControllerActivity extends AppCompatActivity {
 
     private static String huminity;
     private static String temperature;;
+<<<<<<< Updated upstream
 
     private MqttConnector controllerConnector;
 
+=======
+    private boolean moving = false;  // 또는 false
+
+    private int dpToPx(float dp) {
+        float scale = getResources().getDisplayMetrics().density;
+        return (int) (dp * scale + 0.5f);
+    }
+>>>>>>> Stashed changes
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,10 +100,20 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         }
 
+<<<<<<< Updated upstream
         controllerConnector = new MqttConnector(IPAddress, userName, userPassword);
         isConnect = controllerConnector.connect();
+=======
 
-        controllerConnector.subscribe("window/auto_motor_request");
+        if (foreGroundService.auto == null) {
+            foreGroundService.makeConnect(IPAddress,userName,userPassword);
+            isConnect = foreGroundService.callconnect();
+            foreGroundService.subwindow();
+        }
+        else{isConnect = foreGroundService.callconnect();}
+
+>>>>>>> Stashed changes
+
         String autoFlag = auto.getString("auto", "false");
         try {
             if(autoFlag.equals("true")){
@@ -151,19 +173,29 @@ public class windowControllerActivity extends AppCompatActivity {
                 if(isChecked){
                     String topic = "window/auto_motor_request";
                     String message = "true";
-                    controllerConnector.publish(topic, message);
+                    foreGroundService.auto.publish(topic, message);
                     editor.putString("auto", "true");
+<<<<<<< Updated upstream
                     editor.apply();
                     isConnect = controllerConnector.disconnect();
+=======
+                    editor.apply();  //자동 모드 활성화 하여 저장
+//                    multiThreadRun = false;
+>>>>>>> Stashed changes
                     startService(serviceIntent);
                 }else{
                     String topic = "window/auto_motor_request";
                     String message = "false";
-                    controllerConnector.publish(topic, message);
+                    foreGroundService.auto.publish(topic, message);
                     editor.putString("auto", "false");
                     editor.apply();
                     stopService(serviceIntent);
+<<<<<<< Updated upstream
                     isConnect = controllerConnector.connect();
+=======
+//                    startHuminityThread();
+                    Log.d("manual", "conncet");
+>>>>>>> Stashed changes
                 }
             }
         });
@@ -175,7 +207,7 @@ public class windowControllerActivity extends AppCompatActivity {
                 if(!isopen){
                     String topic = "window/motor_request";
                     String message = "open";
-                    controllerConnector.publish(topic, message);
+                    foreGroundService.auto.publish(topic, message);
                     isopen = true;
                     Toast.makeText(this, "창문을 개방합니다.", Toast.LENGTH_SHORT).show();
                     windowState.setImageResource(R.drawable.window_status_open);
@@ -192,8 +224,12 @@ public class windowControllerActivity extends AppCompatActivity {
                 if(isopen){
                     String topic = "window/motor_request";
                     String message = "close";
+<<<<<<< Updated upstream
                     controllerConnector.publish(topic, message);
                     isopen = false;
+=======
+                    foreGroundService.auto.publish(topic, message);
+>>>>>>> Stashed changes
                     Toast.makeText(this, "창문을 폐쇠합니다.", Toast.LENGTH_SHORT).show();
                     windowState.setImageResource(R.drawable.window_status_close);
                 } else {
@@ -217,6 +253,7 @@ public class windowControllerActivity extends AppCompatActivity {
             startActivity(mapIntent);
         });
     }
+<<<<<<< Updated upstream
 
     @Override
     protected void onResume() {
@@ -230,6 +267,45 @@ public class windowControllerActivity extends AppCompatActivity {
             loadWeatherFromSavedLocation(latitude, longitude);
         } else {
             weatherView.setText("위치 정보가 없습니다.");
+=======
+    private void reconnectAfterDelay(long delayMillis) {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            isConnect = foreGroundService.auto.connect();
+            Log.d("manual", "connect 재연결됨");
+        }, delayMillis);
+    }
+    private void set_status_window(String status) {
+        if (windowState != null) {
+            if (status == "open") {
+                float deltaX = -250f; // 오른쪽으로 200픽셀 이동
+                windowState.animate()
+                        .translationXBy(deltaX)
+                        .setDuration(3000)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                isopen = true;
+                                moving = false;  // 3초 애니메이션 끝난 후 실행
+                            }
+                        })
+                        .start();
+            } else if (status == "default") {
+                return; // 아무것도 안 함
+            } else {
+                float deltaX = 250f; // 왼쪽으로 200픽셀 이동
+                windowState.animate()
+                        .translationXBy(deltaX)
+                        .setDuration(3000)
+                        .withEndAction(new Runnable() {
+                            @Override
+                            public void run() {
+                                isopen = false;
+                                moving = false;  // 3초 애니메이션 끝난 후 실행
+                            }
+                        })
+                        .start();
+            }
+>>>>>>> Stashed changes
         }
     }
 
@@ -278,4 +354,123 @@ public class windowControllerActivity extends AppCompatActivity {
         finish();
         super.onBackPressed();
     }
+<<<<<<< Updated upstream
+=======
+
+    public static void reconnect(){
+        foreGroundService.auto.connect();
+    }
+
+    private void startHuminityThread() {
+        Thread thread = new Thread(() -> {
+            multiThreadRun = true;
+            Log.i("multiThread", "start multiThread");
+
+            while (multiThreadRun) {
+                Log.i("thread", "run");
+                String JsonMessage = foreGroundService.auto.getLatestMessage("pico/dht22");
+
+                try {
+                    JSONObject jsonObject = new JSONObject(JsonMessage);
+                    temperature = jsonObject.getString("temp");
+                    huminity = jsonObject.getString("hum") + "%";
+                    Log.i("threadcheck","humtemp");
+
+                    runOnUiThread(() -> {
+                        huminityView.setText(huminity);
+
+                        // 습도 이미지 처리
+                        ImageView humidityImage = findViewById(R.id.humidityImage);
+                        int humValue = 0;
+                        try {
+                            humValue = Integer.parseInt(huminity.replace("%", ""));
+                        } catch (NumberFormatException e) {
+                            humValue = 0;
+                        }
+
+                        if (humValue < 10) {
+                            humidityImage.setImageResource(R.drawable.sup1); // 낮음
+                            humidityImage.setBackgroundColor(waterColors[0]);
+                            huminityView.setTextColor(waterColors[0]);
+                        } else if (humValue < 20) {
+                            humidityImage.setImageResource(R.drawable.sup2);
+                            humidityImage.setBackgroundColor(waterColors[1]);
+                            huminityView.setTextColor(waterColors[1]);
+                        } else if (humValue < 40) {
+                            humidityImage.setImageResource(R.drawable.sup3);
+                            humidityImage.setBackgroundColor(waterColors[2]);
+                            huminityView.setTextColor(waterColors[2]);
+                        } else if (humValue < 60) {
+                            humidityImage.setImageResource(R.drawable.sup4);
+                            humidityImage.setBackgroundColor(waterColors[3]);
+                            huminityView.setTextColor(waterColors[3]);
+                        } else {
+                            humidityImage.setImageResource(R.drawable.sup5); // 높음
+                            humidityImage.setBackgroundColor(waterColors[4]);
+                            huminityView.setTextColor(waterColors[4]);
+                        }
+
+                        // 온도 텍스트 및 이미지 처리 추가
+                        TextView temperatureView = findViewById(R.id.temperature_view); // 온도 표시용 TextView (레이아웃에 있어야 함)
+                        ImageView temperatureImage = findViewById(R.id.temperatureImage); // 온도 이미지 표시용 ImageView (레이아웃에 있어야 함)
+                        ImageView overlayImage = findViewById(R.id.overlayImage);
+                        FrameLayout frameLayout = findViewById(R.id.temperatureImageframe);
+                        float tempValue = 0f;
+                        try {
+                            tempValue = Float.parseFloat(temperature);
+                        } catch (NumberFormatException e) {
+                            tempValue = 0f;
+                        }
+
+                        temperatureView.setText(String.format("%.1f°C", tempValue));FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
+                        FrameLayout.LayoutParams param = (FrameLayout.LayoutParams) overlayImage.getLayoutParams();
+
+
+                        if (tempValue <= 10) {
+                            param.height = dpToPx(45);
+                            frameLayout.setBackgroundColor(tempColors[0]);
+                            temperatureView.setTextColor(tempColors[0]);
+                        } else if (tempValue <= 15) {
+                            param.height = dpToPx(35);
+                            frameLayout.setBackgroundColor(tempColors[1]);
+                            temperatureView.setTextColor(tempColors[1]);
+                        } else if (tempValue <= 20) {
+                            param.height = dpToPx(25);
+                            frameLayout.setBackgroundColor(tempColors[2]);
+                            temperatureView.setTextColor(tempColors[2]);
+                        } else if (tempValue <= 25) {
+                            param.height = dpToPx(15);
+                            frameLayout.setBackgroundColor(tempColors[3]);
+                            temperatureView.setTextColor(tempColors[3]);;
+                        } else if (tempValue <= 30) {
+                            param.height = dpToPx(5);
+                            frameLayout.setBackgroundColor(tempColors[4]);
+                            temperatureView.setTextColor(tempColors[4]);
+                        } else {
+                            param.height = dpToPx(0);
+                            frameLayout.setBackgroundColor(tempColors[5]);
+                            temperatureView.setTextColor(tempColors[5]);
+                        }
+
+                        temperatureImage.setLayoutParams(params);
+                    });
+
+                } catch (JSONException e) {
+                    runOnUiThread(() -> huminityView.setText("데이터 오류"));
+                } catch (NullPointerException e) {
+                    runOnUiThread(() -> huminityView.setText("0%"));
+                }
+
+                try {
+                    Thread.sleep(20000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            Log.i("multiThread", "exit multiThread successfully");
+        });
+        thread.start();
+    }
+
+>>>>>>> Stashed changes
 }
