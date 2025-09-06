@@ -90,14 +90,20 @@ public class foreGroundService extends Service {
             boolean weatherFlag = false;
             boolean huminityFlag = false;
             boolean temperatureFlag = false;
+            boolean rainFlag = false;
+
+            float huminity;
+            float temperature;
+            String rain;
 
             url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
 
             auto.connect();
-            auto.subscribe("pico/dht22");
 
             while (true){
                 try {
+                    Log.i("foreGroundService", "run");
+
                     URL requestUrl = new URL(url);
                     HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
                     conn.setRequestMethod("GET");
@@ -111,12 +117,37 @@ public class foreGroundService extends Service {
                     reader.close();
 
                     JSONObject response = new JSONObject(result.toString());
-                    
+
                     //자동제어에 필요한 데이터 필드
                     int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
                     double temp = response.getJSONObject("main").getDouble("temp");
-//                    String huminityValue = auto.getLatestMessage();
-//                    float huminity = Float.parseFloat(huminityValue);
+
+                    // 온습도 데이터 load
+                    auto.subscribe("pico/dht22");
+                    String jsonMessage = auto.getLatestMessage("pico/dht22");
+                    if (!isStringEmpty(jsonMessage)) {
+                        JSONObject humAndTemp = new JSONObject(jsonMessage);
+                        huminity = (float) humAndTemp.getDouble("hum");
+                        temperature = (float) humAndTemp.getDouble("temp");
+                    }else{
+                        huminity = 0.0f;
+                        temperature = 0.0f;
+                    }
+
+                    Log.i("data", "hum");
+
+                    // 강우 여부 로드
+                    auto.subscribe("pico/rain");
+                    String rainMessage = auto.getLatestMessage("pico/rain");
+                    if (!isStringEmpty(rainMessage)) {
+                        JSONObject isRain = new JSONObject(rainMessage);
+                        rain = isRain.getString("rain");
+                    } else {
+                        rain = "1";
+                    }
+
+
+                    Log.i("data", "rain");
 
                     //날씨에 따른 창문 개방 여부
                     if (weatherId < 800 && weatherId >= 200) {
@@ -128,43 +159,49 @@ public class foreGroundService extends Service {
                     }
 
                     // 내부 습도에 따른 창문 개방 여부
-//                    if (huminity < 50f || huminity > 60f){
-//                        // 환기 필요
-//                        huminityFlag = true;
-//                    } else {
-//                        // 환기 불필요
-//                        huminityFlag = false;
-//                    }
-                    
-                    // 자동제어 로직부
-                    if (weatherFlag) {
-                        auto.publish("window/motor_request", "open");
-                        windowEditor.putBoolean("status", true);
-
+                    if (huminity < 50f || huminity > 60f){
+                        // 환기 필요
+                        huminityFlag = true;
                     } else {
-                        auto.publish("window/motor_request", "close");
-                        windowEditor.putBoolean("status", false);
+                        // 환기 불필요
+                        huminityFlag = false;
                     }
 
-//                    if(huminityFlag){
-//                        if(weatherFlag){
-//                            auto.publish("window/motor_request", "open");
-//                            windowEditor.putBoolean("status", true);
-//                        } else {
-//                            auto.publish("window/motor_request", "close");
-//                            windowEditor.putBoolean("status", false);
-//                        }
-//                    } else {
-//                        if(weatherFlag){
-//                            auto.publish("window/motor_request", "open");
-//                            windowEditor.putBoolean("status", true);
-//                        } else {
-//                            auto.publish("window/motor_request", "close");
-//                            windowEditor.putBoolean("status", false);
-//                        }
-//                    }
+                    if(rain.equals("0")){
+                        rainFlag = true;
+                    } else {
+                        rainFlag = false;
+                    }
                     
-                    Thread.sleep(60000);
+                    // 자동제어 로직부
+//                    if (weatherFlag) {
+//                        auto.publish("window/motor_request", "open");
+//                        windowEditor.putBoolean("status", true);
+//
+//                    } else {
+//                        auto.publish("window/motor_request", "close");
+//                        windowEditor.putBoolean("status", false);
+//                    }
+
+                    if(huminityFlag){
+                        if(weatherFlag || rainFlag){
+                            auto.publish("window/motor_request", "open");
+                            windowEditor.putBoolean("status", true);
+                        } else {
+                            auto.publish("window/motor_request", "close");
+                            windowEditor.putBoolean("status", false);
+                        }
+                    } else {
+                        if(weatherFlag || rainFlag){
+                            auto.publish("window/motor_request", "open");
+                            windowEditor.putBoolean("status", true);
+                        } else {
+                            auto.publish("window/motor_request", "close");
+                            windowEditor.putBoolean("status", false);
+                        }
+                    }
+                    
+                    Thread.sleep(20000);
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -254,5 +291,9 @@ public class foreGroundService extends Service {
     public static boolean makeConnect(String Address, String Name, String Password) {
         auto = new MqttConnector(Address, Name, Password);
         return false;
+    }
+
+    static boolean isStringEmpty(String str) {
+        return str == null || str.trim().isEmpty();
     }
 }

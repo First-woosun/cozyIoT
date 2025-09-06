@@ -3,9 +3,14 @@ package com.example.cozyiot.func;
 import android.util.Log;
 import org.eclipse.paho.client.mqttv3.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MqttConnector {
     private MqttClient mqttClient;
     private String latestMessage = null;
+
+    private final Map<String, String> messageMap = new HashMap<>();
     private static final String TAG = "MqttConnector";
     private final String serverUri;
     private final String clientId;
@@ -37,7 +42,7 @@ public class MqttConnector {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
                     Log.d(TAG, "Message arrived: " + message.toString());
-                    latestMessage = message.toString();
+                    messageMap.put(topic, message.toString());
                 }
 
                 @Override
@@ -95,7 +100,7 @@ public class MqttConnector {
         return false;
     }
 
-    public String getLatestMessage() {
-        return latestMessage;
+    public String getLatestMessage(String topic) {
+        return messageMap.get(topic);
     }
 }
