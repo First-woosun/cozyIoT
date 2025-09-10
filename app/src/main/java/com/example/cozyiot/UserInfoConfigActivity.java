@@ -124,12 +124,19 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 editor.apply();
                 Toast.makeText(this, "저장 완료", Toast.LENGTH_SHORT).show();
 
+                //위도, 경도값 load
+                String latitude = String.valueOf(location.getFloat("latitude", 0f));
+                String longitude = String.valueOf(location.getFloat("longitude", 0f));
+
                 //사용자 정보를 서버에 전송
                 infoConnector.publish("userInfo/name", userName);
                 infoConnector.publish("userInfo/password", userPassword);
                 infoConnector.publish("userInfo/wifiName", wifiName);
                 infoConnector.publish("userInfo/wifiPassword", wifiPassword);
                 infoConnector.publish("userInfo/IPAddress", IPAddress);
+                infoConnector.publish("userInfo/cityName", locationData);
+                infoConnector.publish("userInfo/latitude", latitude);
+                infoConnector.publish("userInfo/longitude", longitude);
                 infoConnector.publish("userInfo/config", "save");
                 infoConnector.disconnect();
 
@@ -144,7 +151,11 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         resetBtn.setOnClickListener(v -> {
             String resetUserName = userNameInput.getText().toString();
             if(!preferences.getAll().isEmpty()){
-                infoConnector.publish("userInfo/config" , "reset:");
+                editor.clear();
+                editor.apply();
+
+                infoConnector.publish("reset", "userInfo/config");
+
                 if ( resetUserName != null && ! resetUserName.isEmpty()) {
                 infoConnector.publish( "userInfo/name", resetUserName);
                 }
