@@ -154,7 +154,7 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 editor.clear();
                 editor.apply();
 
-                infoConnector.publish("reset", "userInfo/config");
+                infoConnector.publish("userInfo/config", "reset");
 
                 if ( resetUserName != null && ! resetUserName.isEmpty()) {
                 infoConnector.publish( "userInfo/name", resetUserName);
