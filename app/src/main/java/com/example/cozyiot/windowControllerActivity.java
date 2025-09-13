@@ -106,15 +106,16 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         }
 
+        isConnect = controllerConnector.connect();
 
-        if (foreGroundService.auto != null) {
-            controllerConnector = foreGroundService.auto;
-            isConnect = controllerConnector.connect();
-        } else {
-            foreGroundService.makeConnect(IPAddress,userName,userPassword);
-            controllerConnector = foreGroundService.auto;
-            isConnect = controllerConnector.connect();
-        }
+//        if (foreGroundService.auto != null) {
+//            controllerConnector = foreGroundService.auto;
+//            isConnect = controllerConnector.connect();
+//        } else {
+//            foreGroundService.makeConnect(IPAddress,userName,userPassword);
+//            controllerConnector = foreGroundService.auto;
+//            isConnect = controllerConnector.connect();
+//        }
 
         controllerConnector.subscribe("window/auto_motor_request");
         String autoFlag = auto.getString("auto", "false");
@@ -154,16 +155,16 @@ public class windowControllerActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 Intent serviceIntent = new Intent(windowControllerActivity.this, foreGroundService.class);
                 if(isChecked){
-                    String topic = "window/auto_motor_request";
+                    String topic = "pico/auto_run";
                     String message = "true";
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "true");
                     editor.apply();
-                    isConnect = foreGroundService.callDisconnect();
+//                    isConnect = foreGroundService.callDisconnect();
 //                    multiThreadRun = false;
                     startService(serviceIntent);
                 }else{
-                    String topic = "window/auto_motor_request";
+                    String topic = "pico/auto_run";
                     String message = "false";
                     controllerConnector.publish(topic, message);
                     editor.putString("auto", "false");
