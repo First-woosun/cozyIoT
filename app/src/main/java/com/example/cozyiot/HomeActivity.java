@@ -8,6 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,21 +24,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.widget.*;
 
-import com.example.cozyiot.func.MqttConnector;
+import com.example.cozyiot.func.*;
 import com.google.android.material.navigation.NavigationView;
 import com.google.gson.reflect.TypeToken;
-import org.json.JSONObject;
 import com.google.gson.Gson;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Type;
 public class HomeActivity extends AppCompatActivity {
 
-    private MqttConnector homeConnector;
+    private MQTTDataFunc homeConnector;
 
     private ImageButton machineAddBtn;
 
@@ -56,7 +57,7 @@ public class HomeActivity extends AppCompatActivity {
     private boolean adminFlag;
 
     private String Address; private  String Name; private String Password;
-    private String city; private float latitude; private float longtitude;
+    private String city; private String weatherID; private String temper;
 
     private boolean threadFlag = true;
 
@@ -65,6 +66,8 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
+
+
 
         cityName = findViewById(R.id.tv_city_name);
         weatherStatus = findViewById(R.id.tv_weather_status);
@@ -77,9 +80,9 @@ public class HomeActivity extends AppCompatActivity {
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         location = getSharedPreferences("location_prefs", MODE_PRIVATE);
 
-        city = location.getString("cityName", "");
-        latitude = location.getFloat("latitude", 0f);
-        longtitude = location.getFloat("longtitude", 0f);
+//        city = location.getString("cityName", "");
+//        latitude = location.getFloat("latitude", 0f);
+//        longtitude = location.getFloat("longtitude", 0f);
 
         //계정 유형에 따른 데이터 load
         if(adminFlag){
@@ -92,22 +95,28 @@ public class HomeActivity extends AppCompatActivity {
             Password = preferences.getString("userPassword", "");
         }
 
-        if(!location.getAll().isEmpty()){
-            city = location.getString("cityName", "");
-            latitude = location.getFloat("latitude", 0f);
-            longtitude = location.getFloat("longtitude", 0f);
-            cityName.setText(city);
+        loadWeatherAndCityName(Address, Name, Password);
 
-            loadWeatherFromSavedLocation(latitude, longtitude);
-        } else {
-            cityName.setText("???");
-            weatherStatus.setVisibility(INVISIBLE);
-            temperature.setText("0°C");
-        }
+//        if(!location.getAll().isEmpty()){
+//            city = location.getString("cityName", "");
+//            latitude = location.getFloat("latitude", 0f);
+//            longtitude = location.getFloat("longtitude", 0f);
+//            cityName.setText(city);
+//
+//            loadWeatherFromSavedLocation(latitude, longtitude);
+//            city = homeConnector.callData("cityName");
+//            latitude = Float.parseFloat(homeConnector.callData("latitude"));
+//            longitude = Float.parseFloat(homeConnector.callData("longitude"));
+//
+//            loadWeatherFromSavedLocation(latitude, longitude);
+//        } else {
+//            cityName.setText("???");
+//            weatherStatus.setVisibility(INVISIBLE);
+//            temperature.setText("0°C");
+//        }
 
-        homeConnector = new MqttConnector(Address, Name, Password);
-
-        //machineAddBtn = findViewById(R.id.btn_add_item);
+//        homeConnector = new MqttConnector(Address, Name, Password);
+//        machineAddBtn = findViewById(R.id.btn_add_item);
 
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
@@ -189,6 +198,18 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(this, MainActivity.class));
             finish();
         });
+
+        // Android 13 이상에서 알림 권한 요청
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+            }
+        }
     }
 
     @Override
@@ -205,50 +226,43 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        city = location.getString("cityName", "");
-        latitude = location.getFloat("latitude", 0f);
-        longtitude = location.getFloat("longtitude", 0f);
-        cityName.setText(city);
-
-        loadWeatherFromSavedLocation(latitude, longtitude);
+        loadWeatherAndCityName(Address, Name, Password);
 
         super.onResume();
     }
 
 
-    private void loadWeatherFromSavedLocation(float lat, float lon) {
-        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
-                "&lon=" + lon +
-                "&appid=" + apiKey +
-                "&units=metric&lang=kr";
-
+    private void loadWeatherAndCityName(String Address, String Name, String  Password) {
         new Thread(() -> {
+            int w_ID = 0;
+
             if(threadFlag){
                 try {
-                    URL requestUrl = new URL(url);
-                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-                    conn.setRequestMethod("GET");
+                    MQTTDataFunc func = new MQTTDataFunc(Address, Name, Password);
 
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder result = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
+                    city = func.callData("cityName");
+                    weatherID = func.callData("weatherID");
+                    temper = func.callData("temp");
+
+                    if(city.equals("success") && weatherID.equals("success") && temper.equals("success")){
+                        city =func.getData("cityName");
+                        weatherID = func.getData("weatherID");
+                        w_ID = Integer.parseInt(weatherID);
+                        temper = func.getData("temp");
+                    } else {
+                        city = "???";
+                        weatherID = "???";
+                        temper = "???";
                     }
-                    reader.close();
+                    String temp_now = temper+"°C";
 
-                    JSONObject response = new JSONObject(result.toString());
-                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
-                    double temp = response.getJSONObject("main").getDouble("temp");
+                    runOnUiThread(() -> cityName.setText(city));
 
-                    String temp_now = temp+"°C";
-
-                    if(weatherId < 600 && weatherId >= 200){
+                    if(w_ID < 600 && w_ID >= 200){
                         runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
-                    } else if (weatherId >= 600 && weatherId <700) {
+                    } else if (w_ID >= 600 && w_ID <700) {
                         runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
-                    } else if (weatherId > 800){
+                    } else if (w_ID > 800){
                         runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
                     } else {
                         runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
@@ -257,6 +271,38 @@ public class HomeActivity extends AppCompatActivity {
                     runOnUiThread(() -> temperature.setText(temp_now));
 
                     Thread.sleep(30000);
+
+//                    URL requestUrl = new URL(url);
+//                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
+//                    conn.setRequestMethod("GET");
+//
+//                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+//                    StringBuilder result = new StringBuilder();
+//                    String line;
+//                    while ((line = reader.readLine()) != null) {
+//                        result.append(line);
+//                    }
+//                    reader.close();
+//
+//                    JSONObject response = new JSONObject(result.toString());
+//                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
+//                    double temp = response.getJSONObject("main").getDouble("temp");
+//
+//                    String temp_now = temp+"°C";
+//
+//                    if(weatherId < 600 && weatherId >= 200){
+//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
+//                    } else if (weatherId >= 600 && weatherId <700) {
+//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
+//                    } else if (weatherId > 800){
+//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
+//                    } else {
+//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
+//                    }
+//
+//                    runOnUiThread(() -> temperature.setText(temp_now));
+//
+//                    Thread.sleep(30000);
 
                 } catch (Exception e) {
                     e.printStackTrace();
