@@ -124,8 +124,8 @@ public class windowControllerActivity extends AppCompatActivity {
 //            isConnect = controllerConnector.connect();
 //        }
 
-        if(connector.callData("auto_run").equals("success")){
-            autoFlag = connector.getData("pico/auto_run");
+        if(connector.callData("pico","auto_run").equals("success")){
+//            autoFlag = connector.getData("pico","pico/auto_run");
         }
 
         try {
@@ -140,12 +140,12 @@ public class windowControllerActivity extends AppCompatActivity {
             autoSwitch.setChecked(false);
         }
 
-        startHuminityThread();
+//        startHuminityThread();
 
 //        windowStatus = getSharedPreferences("windowPrefs", MODE_PRIVATE);
 //        windowEditor = windowStatus.edit();
-        if(connector.callData("window_status").equals("success")){
-            isopen = connector.getData("window_status");
+        if(connector.callData("userInfo","window_status").equals("success")){
+//            isopen = connector.getData("userInfo","window_status");
         }
 
         if(isopen.equals("close")){
@@ -327,119 +327,119 @@ public class windowControllerActivity extends AppCompatActivity {
         controllerConnector.connect();
     }
 
-    private void startHuminityThread() {
-        Thread thread = new Thread(() -> {
-            multiThreadRun = true;
-            String JsonMessage;
-            Log.i("multiThread", "start multiThread");
-//            controllerConnector.subscribe("pico/dht22");
-
-            while (multiThreadRun) {
-                Log.i("thread", "run");
-                if(connector.callData("dht22").equals("success")){
-                    JsonMessage = connector.getData("dht22");
-                    try {
-                        JSONObject jsonObject = new JSONObject(JsonMessage);
-                        temperature = jsonObject.getString("temp");
-                        huminity = jsonObject.getString("hum") + "%";
-//                        Log.i("threadcheck","humtemp");
-
-                        runOnUiThread(() -> {
-                            huminityView.setText(huminity);
-
-                            // 습도 이미지 처리
-                            ImageView humidityImage = findViewById(R.id.humidityImage);
-                            int humValue = 0;
-                            try {
-                                humValue = Integer.parseInt(huminity.replace("%", ""));
-                            } catch (NumberFormatException e) {
-                                humValue = 0;
-                            }
-
-                            if (humValue < 10) {
-                                humidityImage.setImageResource(R.drawable.sup1); // 낮음
-                                humidityImage.setBackgroundColor(waterColors[0]);
-                                huminityView.setTextColor(waterColors[0]);
-                            } else if (humValue < 20) {
-                                humidityImage.setImageResource(R.drawable.sup2);
-                                humidityImage.setBackgroundColor(waterColors[1]);
-                                huminityView.setTextColor(waterColors[1]);
-                            } else if (humValue < 40) {
-                                humidityImage.setImageResource(R.drawable.sup3);
-                                humidityImage.setBackgroundColor(waterColors[2]);
-                                huminityView.setTextColor(waterColors[2]);
-                            } else if (humValue < 60) {
-                                humidityImage.setImageResource(R.drawable.sup4);
-                                humidityImage.setBackgroundColor(waterColors[3]);
-                                huminityView.setTextColor(waterColors[3]);
-                            } else {
-                                humidityImage.setImageResource(R.drawable.sup5); // 높음
-                                humidityImage.setBackgroundColor(waterColors[4]);
-                                huminityView.setTextColor(waterColors[4]);
-                            }
-
-                            // 온도 텍스트 및 이미지 처리 추가
-                            TextView temperatureView = findViewById(R.id.temperature_view); // 온도 표시용 TextView (레이아웃에 있어야 함)
-                            ImageView temperatureImage = findViewById(R.id.temperatureImage); // 온도 이미지 표시용 ImageView (레이아웃에 있어야 함)
-                            ImageView overlayImage = findViewById(R.id.overlayImage);
-                            FrameLayout frameLayout = findViewById(R.id.temperatureImageframe);
-                            float tempValue = 0f;
-                            try {
-                                tempValue = Float.parseFloat(temperature);
-                            } catch (NumberFormatException e) {
-                                tempValue = 0f;
-                            }
-
-                            temperatureView.setText(String.format("%.1f°C", tempValue));FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
-                            FrameLayout.LayoutParams param = (FrameLayout.LayoutParams) overlayImage.getLayoutParams();
-
-
-                            if (tempValue <= 10) {
-                                param.height = dpToPx(45);
-                                frameLayout.setBackgroundColor(tempColors[0]);
-                                temperatureView.setTextColor(tempColors[0]);
-                            } else if (tempValue <= 15) {
-                                param.height = dpToPx(35);
-                                frameLayout.setBackgroundColor(tempColors[1]);
-                                temperatureView.setTextColor(tempColors[1]);
-                            } else if (tempValue <= 20) {
-                                param.height = dpToPx(25);
-                                frameLayout.setBackgroundColor(tempColors[2]);
-                                temperatureView.setTextColor(tempColors[2]);
-                            } else if (tempValue <= 25) {
-                                param.height = dpToPx(15);
-                                frameLayout.setBackgroundColor(tempColors[3]);
-                                temperatureView.setTextColor(tempColors[3]);;
-                            } else if (tempValue <= 30) {
-                                param.height = dpToPx(5);
-                                frameLayout.setBackgroundColor(tempColors[4]);
-                                temperatureView.setTextColor(tempColors[4]);
-                            } else {
-                                param.height = dpToPx(0);
-                                frameLayout.setBackgroundColor(tempColors[5]);
-                                temperatureView.setTextColor(tempColors[5]);
-                            }
-
-                            temperatureImage.setLayoutParams(params);
-                        });
-
-                    } catch (JSONException e) {
-                        runOnUiThread(() -> huminityView.setText("데이터 오류"));
-                    } catch (NullPointerException e) {
-                        runOnUiThread(() -> huminityView.setText("0%"));
-                    }
-                } else {
-                    Log.e("dht22", "데이터 요청 에러");
-                }
-                try {
-                    Thread.sleep(20000);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-            Log.i("multiThread", "exit multiThread successfully");
-        });
-        thread.start();
-    }
+//    private void startHuminityThread() {
+//        Thread thread = new Thread(() -> {
+//            multiThreadRun = true;
+//            String JsonMessage;
+//            Log.i("multiThread", "start multiThread");
+////            controllerConnector.subscribe("pico/dht22");
+//
+//            while (multiThreadRun) {
+//                Log.i("thread", "run");
+//                if(connector.callData("pico","dht22").equals("success")){
+////                    JsonMessage = connector.getData("pico", "dht22");
+//                    try {
+//                        JSONObject jsonObject = new JSONObject(JsonMessage);
+//                        temperature = jsonObject.getString("temp");
+//                        huminity = jsonObject.getString("hum") + "%";
+////                        Log.i("threadcheck","humtemp");
+//
+//                        runOnUiThread(() -> {
+//                            huminityView.setText(huminity);
+//
+//                            // 습도 이미지 처리
+//                            ImageView humidityImage = findViewById(R.id.humidityImage);
+//                            int humValue = 0;
+//                            try {
+//                                humValue = Integer.parseInt(huminity.replace("%", ""));
+//                            } catch (NumberFormatException e) {
+//                                humValue = 0;
+//                            }
+//
+//                            if (humValue < 10) {
+//                                humidityImage.setImageResource(R.drawable.sup1); // 낮음
+//                                humidityImage.setBackgroundColor(waterColors[0]);
+//                                huminityView.setTextColor(waterColors[0]);
+//                            } else if (humValue < 20) {
+//                                humidityImage.setImageResource(R.drawable.sup2);
+//                                humidityImage.setBackgroundColor(waterColors[1]);
+//                                huminityView.setTextColor(waterColors[1]);
+//                            } else if (humValue < 40) {
+//                                humidityImage.setImageResource(R.drawable.sup3);
+//                                humidityImage.setBackgroundColor(waterColors[2]);
+//                                huminityView.setTextColor(waterColors[2]);
+//                            } else if (humValue < 60) {
+//                                humidityImage.setImageResource(R.drawable.sup4);
+//                                humidityImage.setBackgroundColor(waterColors[3]);
+//                                huminityView.setTextColor(waterColors[3]);
+//                            } else {
+//                                humidityImage.setImageResource(R.drawable.sup5); // 높음
+//                                humidityImage.setBackgroundColor(waterColors[4]);
+//                                huminityView.setTextColor(waterColors[4]);
+//                            }
+//
+//                            // 온도 텍스트 및 이미지 처리 추가
+//                            TextView temperatureView = findViewById(R.id.temperature_view); // 온도 표시용 TextView (레이아웃에 있어야 함)
+//                            ImageView temperatureImage = findViewById(R.id.temperatureImage); // 온도 이미지 표시용 ImageView (레이아웃에 있어야 함)
+//                            ImageView overlayImage = findViewById(R.id.overlayImage);
+//                            FrameLayout frameLayout = findViewById(R.id.temperatureImageframe);
+//                            float tempValue = 0f;
+//                            try {
+//                                tempValue = Float.parseFloat(temperature);
+//                            } catch (NumberFormatException e) {
+//                                tempValue = 0f;
+//                            }
+//
+//                            temperatureView.setText(String.format("%.1f°C", tempValue));FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
+//                            FrameLayout.LayoutParams param = (FrameLayout.LayoutParams) overlayImage.getLayoutParams();
+//
+//
+//                            if (tempValue <= 10) {
+//                                param.height = dpToPx(45);
+//                                frameLayout.setBackgroundColor(tempColors[0]);
+//                                temperatureView.setTextColor(tempColors[0]);
+//                            } else if (tempValue <= 15) {
+//                                param.height = dpToPx(35);
+//                                frameLayout.setBackgroundColor(tempColors[1]);
+//                                temperatureView.setTextColor(tempColors[1]);
+//                            } else if (tempValue <= 20) {
+//                                param.height = dpToPx(25);
+//                                frameLayout.setBackgroundColor(tempColors[2]);
+//                                temperatureView.setTextColor(tempColors[2]);
+//                            } else if (tempValue <= 25) {
+//                                param.height = dpToPx(15);
+//                                frameLayout.setBackgroundColor(tempColors[3]);
+//                                temperatureView.setTextColor(tempColors[3]);;
+//                            } else if (tempValue <= 30) {
+//                                param.height = dpToPx(5);
+//                                frameLayout.setBackgroundColor(tempColors[4]);
+//                                temperatureView.setTextColor(tempColors[4]);
+//                            } else {
+//                                param.height = dpToPx(0);
+//                                frameLayout.setBackgroundColor(tempColors[5]);
+//                                temperatureView.setTextColor(tempColors[5]);
+//                            }
+//
+//                            temperatureImage.setLayoutParams(params);
+//                        });
+//
+//                    } catch (JSONException e) {
+//                        runOnUiThread(() -> huminityView.setText("데이터 오류"));
+//                    } catch (NullPointerException e) {
+//                        runOnUiThread(() -> huminityView.setText("0%"));
+//                    }
+//                } else {
+//                    Log.e("dht22", "데이터 요청 에러");
+//                }
+//                try {
+//                    Thread.sleep(20000);
+//                } catch (InterruptedException e) {
+//                    break;
+//                }
+//            }
+//            Log.i("multiThread", "exit multiThread successfully");
+//        });
+//        thread.start();
+//    }
 
 }

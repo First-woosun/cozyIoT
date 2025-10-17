@@ -11,6 +11,7 @@ import android.util.Log;
 import android.widget.*;
 
 import com.example.cozyiot.func.MqttConnector;
+import com.example.cozyiot.func.SynchronizedMqttConnector;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     SharedPreferences preferences;;
 
     private MqttConnector loginConnector;
+    private SynchronizedMqttConnector synchronizedMqttConnector;
 
     private static boolean connectFlag;
     private static boolean autoLoginFlag;
@@ -30,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+        synchronizedMqttConnector = SynchronizedMqttConnector.getInstance();
 
         loginBtn = findViewById(R.id.buttonLogin);
         signUpBtn = findViewById(R.id.buttonSignup);
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "자동 로그인 성공", Toast.LENGTH_SHORT).show();
                     Log.d("Auto Login", "connecting Success");
                     loginConnector.disconnect();
+                    synchronizedMqttConnector.connect(address, name, pass);
                     startActivity(new Intent(MainActivity.this, HomeActivity.class));
                     finish();
                 } else {
@@ -96,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
                     editor.apply();
                     Log.d("Login", "Login Success");
                     loginConnector.disconnect();
+                    synchronizedMqttConnector.connect(address, nameInput, passInput);
                     Intent intent = new Intent(this, HomeActivity.class);
                     intent.putExtra("admin", false);
                     startActivity(intent);

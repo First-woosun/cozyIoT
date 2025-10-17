@@ -71,11 +71,12 @@ public class signUpActivity extends AppCompatActivity {
 
                 //사용자 정보를 서버에 전송
                 signUpConnector.connect();
-                signUpConnector.publish("userInfo/name", Username);
-                signUpConnector.publish("userInfo/password", Password);
-                signUpConnector.publish("userInfo/wifiName", WIFIName);
-                signUpConnector.publish("userInfo/wifiPassword", WIFIPassword);
-                signUpConnector.publish("userInfo/IPAddress", IPAddress);
+                String tempTopic = "userInfo/" + Username + "/";
+//                signUpConnector.publish("userInfo/name", Username);
+                signUpConnector.publish(tempTopic+"password", Password);
+                signUpConnector.publish(tempTopic+"wifiName", WIFIName);
+                signUpConnector.publish(tempTopic+"wifiPassword", WIFIPassword);
+                signUpConnector.publish( tempTopic+"IPAddress", IPAddress);
                 signUpConnector.publish("userInfo/config", "save");
                 signUpConnector.disconnect();
 

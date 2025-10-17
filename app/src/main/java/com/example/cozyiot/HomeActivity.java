@@ -32,9 +32,13 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Type;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class HomeActivity extends AppCompatActivity {
 
     private MQTTDataFunc homeConnector;
+    private SynchronizedMqttConnector Connector;
 
     private ImageButton machineAddBtn;
 
@@ -66,8 +70,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
-
-
+        Connector = SynchronizedMqttConnector.getInstance();
 
         cityName = findViewById(R.id.tv_city_name);
         weatherStatus = findViewById(R.id.tv_weather_status);
@@ -89,13 +92,15 @@ public class HomeActivity extends AppCompatActivity {
             Address = "218.49.196.80:1883";
             Name = "cozydow";
             Password = "1234";
+            System.out.println("관리자");
         } else {
             Address = preferences.getString("IPAddress", "");
             Name = preferences.getString("userName", "");
             Password = preferences.getString("userPassword", "");
+            System.out.println("유저");
         }
 
-        loadWeatherAndCityName(Address, Name, Password);
+        loadWeatherAndCityName();
 
 //        if(!location.getAll().isEmpty()){
 //            city = location.getString("cityName", "");
@@ -133,7 +138,7 @@ public class HomeActivity extends AppCompatActivity {
             machineDataList.add(new machineData("window")); // 기본값
         }
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
-        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
+        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList, Connector);
         recyclerView.setAdapter(machineDataAdapter);
 
         machineDataAdapter.setOnAddClickListener(() -> {
@@ -184,6 +189,10 @@ public class HomeActivity extends AppCompatActivity {
                     userInfoIntent.putExtra("admin", false);
                     startActivity(userInfoIntent);
                 }
+            //식물 정보 추가 페이지 진입
+            } else if (id == R.id.nav_Plant_config) {
+                Intent indoorConditionIntent = new Intent(this, indoorStatusConfigActivity.class);
+                startActivity(indoorConditionIntent);
             }
             drawerLayout.closeDrawer(GravityCompat.END);
             return true;
@@ -218,6 +227,7 @@ public class HomeActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.END);;
         }else{
             threadFlag = false;
+            Connector.disconnect();
             super.onBackPressed();
         }
     }
@@ -226,88 +236,88 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        loadWeatherAndCityName(Address, Name, Password);
+        loadWeatherAndCityName();
 
         super.onResume();
     }
 
 
-    private void loadWeatherAndCityName(String Address, String Name, String  Password) {
+    private void loadWeatherAndCityName() {
         new Thread(() -> {
-            int w_ID = 0;
-
             if(threadFlag){
                 try {
-                    MQTTDataFunc func = new MQTTDataFunc(Address, Name, Password);
 
-                    city = func.callData("cityName");
-                    weatherID = func.callData("weatherID");
-                    temper = func.callData("temp");
 
-                    if(city.equals("success") && weatherID.equals("success") && temper.equals("success")){
-                        city =func.getData("cityName");
-                        weatherID = func.getData("weatherID");
-                        w_ID = Integer.parseInt(weatherID);
-                        temper = func.getData("temp");
-                    } else {
-                        city = "???";
-                        weatherID = "???";
-                        temper = "???";
-                    }
-                    String temp_now = temper+"°C";
+                    //도시이름 받아오기
+                    Connector.subscribe("userInfo", "cityName");
+                    Connector.publish("userInfo", "cityName");
+                    city = Connector.getLatestMessage("userInfo", "cityName");
+                    Log.i("city", city);
+                    String decodedCity = decodeUnicode(city);
+                    Log.i("decode", decodedCity);
 
-                    runOnUiThread(() -> cityName.setText(city));
+                    Connector.publish("userInfo", "weather");
 
-                    if(w_ID < 600 && w_ID >= 200){
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
-                    } else if (w_ID >= 600 && w_ID <700) {
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
-                    } else if (w_ID > 800){
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
-                    } else {
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
-                    }
-
-                    runOnUiThread(() -> temperature.setText(temp_now));
-
-                    Thread.sleep(30000);
-
-//                    URL requestUrl = new URL(url);
-//                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-//                    conn.setRequestMethod("GET");
+//                    //날씨 정보 받아오기
+//                    Connector.subscribe("userInfo", "weather");
+//                    Connector.publish("userInfo", "weather");
+//                    String weather = Connector.getLatestMessage("userInfo", "weather");
+//                    System.out.println(weather);
 //
-//                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-//                    StringBuilder result = new StringBuilder();
-//                    String line;
-//                    while ((line = reader.readLine()) != null) {
-//                        result.append(line);
-//                    }
-//                    reader.close();
+//                    //날씨 코드 받아오기
+//                    Connector.subscribe("userInfo","weatherID");
+//                    Connector.publish("userInfo","weatherID");
+//                    weatherID = Connector.getLatestMessage("userInfo","weatherID");
+//                    int w_ID = Integer.parseInt(weatherID);
 //
-//                    JSONObject response = new JSONObject(result.toString());
-//                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
-//                    double temp = response.getJSONObject("main").getDouble("temp");
+//                    //현제 온도 받아오기
+//                    Connector.subscribe("userInfo","temp");
+//                    Connector.publish("userInfo","temp");
+//                    temper = Connector.getLatestMessage("userInfo","temp");
+//                    String temp_now = temper+"°C";
+
+                    runOnUiThread(() -> cityName.setText(decodedCity));
 //
-//                    String temp_now = temp+"°C";
-//
-//                    if(weatherId < 600 && weatherId >= 200){
+//                    if(w_ID < 600 && w_ID >= 200){
 //                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
-//                    } else if (weatherId >= 600 && weatherId <700) {
+//                    } else if (w_ID >= 600 && w_ID <700) {
 //                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
-//                    } else if (weatherId > 800){
+//                    } else if (w_ID > 800){
 //                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
 //                    } else {
 //                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
 //                    }
 //
 //                    runOnUiThread(() -> temperature.setText(temp_now));
-//
-//                    Thread.sleep(30000);
 
+                    Thread.sleep(3000);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public static String decodeUnicode(String unicodeStr) {
+        StringBuilder sb = new StringBuilder();
+        Pattern pattern = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        Matcher matcher = pattern.matcher(unicodeStr);
+
+        int lastEnd = 0;
+        while (matcher.find()) {
+            // 매치되지 않은 일반 문자 처리
+            sb.append(unicodeStr, lastEnd, matcher.start());
+
+            // 16진수를 문자로 변환
+            int code = Integer.parseInt(matcher.group(1), 16);
+            sb.append((char) code);
+
+            lastEnd = matcher.end();
+        }
+        sb.append(unicodeStr.substring(lastEnd));
+        sb.deleteCharAt(0);
+        sb.deleteCharAt(sb.length()-1);
+
+        return sb.toString();
     }
 }

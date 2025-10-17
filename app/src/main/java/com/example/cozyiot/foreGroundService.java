@@ -80,23 +80,23 @@ public class foreGroundService extends Service {
                     Log.i("foreGroundService", "run");
 
                     // 센서값 받아오기
-                    mq_135 = connector.callData("mq_135");
+//                    mq_135 = connector.callData("pico", "mq_135");
                     if (mq_135.equals("success")) {
-                        mq_135 = connector.getData("mq_135");
+//                        mq_135 = connector.getData("pico", "mq_135");
                     } else {
                         mq_135 = "";
                     }
 
-                    dht22 = connector.callData("dht22");
+//                    dht22 = connector.callData("pico", "dht22");
                     if(dht22.equals("success")){
-                        dht22 = connector.getData("dht22");
+//                        dht22 = connector.getData("pico", "dht22");
                     } else {
                         dht22 = "";
                     }
 
-                    bh1750 = connector.callData("bh1750");
+//                    bh1750 = connector.callData("pico", "bh1750");
                     if (bh1750.equals("success")) {
-                        bh1750 = connector.getData("bh1750");
+//                        bh1750 = connector.getData("pico", "bh1750");
                     } else {
                         bh1750 = "";
                     }

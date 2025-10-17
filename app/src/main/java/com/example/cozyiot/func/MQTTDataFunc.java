@@ -17,41 +17,85 @@ public class MQTTDataFunc {
     }
 
     // 서버에 데이터를 호출하는 함수
-    public String callData(String message){
-        boolean isconnect = connector.connect();
-        String returnValue;
-        String topic = "pico/callData";
+    public String callData(String topic_var, String message){
+        String callTopic;
+        String getTopic;
+        String returnData;
 
-        if(isconnect){
-            connector.publish(topic, message);
-            returnValue = "success";
+        if(topic_var.equals("pico")){
+            callTopic = "pico/callData";
+            getTopic = "pico/getData/"+message;
         } else {
-            returnValue = "fail";
+            callTopic = "userInfo/callData/"+this.ID;
+            getTopic = "userInfo/getData/"+this.ID+"/"+message;
         }
 
-        Log.i("callData", message);
+        connector.connect();
 
-        connector.disconnect();
-        return returnValue;
+        // 연결 완료될 때까지 기다리기 (최대 5초)
+        int retryCount = 0;
+        while (!connector.isConnected() && retryCount < 50) {  // 50*100ms = 5초
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            retryCount++;
+        }
+        connector.subscribe(getTopic);
+
+        if (!connector.isConnected()) {
+            Log.e("callData", "MQTT 연결 실패로 publish 불가");
+            return "fail";
+        }
+
+//        connector.subscribe(getTopic);
+        connector.publish(callTopic, message);
+
+//        Log.i("callData", message);
+//        connector.disconnect();
+
+        retryCount = 0;
+        returnData = connector.getLatestMessage(getTopic);
+        while(returnData == null && retryCount < 50){
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            returnData = connector.getLatestMessage(getTopic);
+            retryCount++;
+        }
+        System.out.println(getTopic+": "+returnData);
+
+        if (returnData != null) {
+            connector.disconnect();
+        }
+        return returnData;
     }
 
     //데이터 호출 후 업로드된 데이터를 추출하는 함수
-    public String getData(String topic){
-        boolean isConnect = connector.connect();
-        String finalTopic = "pico/getData" + topic;
-        String returnData;
-
-        if(isConnect){
-            connector.subscribe(topic);
-            returnData = connector.getLatestMessage(finalTopic);
-            System.out.println(returnData);
-        } else {
-            returnData = "fail";
-        }
-
-        connector.disconnect();
-        return  returnData;
-    }
+//    public String getData(String topic_var, String topic){
+////        boolean isConnect = connector.connect();
+//        String finalTopic;
+//        if(topic_var.equals("pico")){
+//            finalTopic = "pico/getData/"+topic;
+//        } else {
+//            finalTopic = "userInfo/getData/"+this.ID+"/"+topic;
+//        }
+//        String returnData;
+//
+//        if(isConnect){
+//            connector.subscribe(finalTopic);
+//            returnData = connector.getLatestMessage(finalTopic);
+//            System.out.println(returnData);
+//        } else {
+//            returnData = "fail";
+//        }
+//
+////        connector.disconnect();
+//        return  returnData;
+//    }
 
     public String pushData(String message, String topic){
         boolean isConnect = connector.connect();
@@ -67,7 +111,7 @@ public class MQTTDataFunc {
         return returnString;
     }
 
-    private void quitConnection(){
+    public void quitConnection(){
         try{
             connector.disconnect();
             Log.i("MQTT", "Disconnect");
@@ -75,5 +119,16 @@ public class MQTTDataFunc {
             Log.e("MQTT", "ERROR OCCURRED : " + e);
         }
 
+    }
+
+    public String getLatestMessage(String topicVar ,String topic){
+        String getTopic;
+
+        if(topicVar.equals("pico")){
+            getTopic = "pico/getData/"+topic;
+        } else {
+            getTopic = "userInfo/getData/"+this.ID+"/"+topic;
+        }
+        return connector.getLatestMessage(getTopic);
     }
 }

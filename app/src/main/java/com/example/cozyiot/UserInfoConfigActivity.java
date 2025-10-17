@@ -62,13 +62,18 @@ public class UserInfoConfigActivity extends AppCompatActivity {
         infoConnector.connect();
 
         // 기존에 저장된 정보를 Edittext에 표시
-        if(!preferences.getAll().isEmpty()){
-            userNameInput.setText(preferences.getString("userName", ""));
-            userPasswordInput.setText(preferences.getString("userPassword", ""));
-            wifiNameInput.setText(preferences.getString("wifiName", ""));
-            wifiPasswordInput.setText(preferences.getString("wifiPassword", ""));
-            IPAddressInput.setText(preferences.getString("IPAddress",""));
-        }
+//        if(!preferences.getAll().isEmpty()){
+//            userNameInput.setText(preferences.getString("userName", ""));
+//            userPasswordInput.setText(preferences.getString("userPassword", ""));
+//            wifiNameInput.setText(preferences.getString("wifiName", ""));
+//            wifiPasswordInput.setText(preferences.getString("wifiPassword", ""));
+//            IPAddressInput.setText(preferences.getString("IPAddress",""));
+//        }
+        userNameInput.setText(preferences.getString("userName", "tq"));
+        userPasswordInput.setText(preferences.getString("userPassword", "tq"));
+        wifiNameInput.setText(preferences.getString("wifiName", "tq"));
+        wifiPasswordInput.setText(preferences.getString("wifiPassword", "tq"));
+        IPAddressInput.setText(preferences.getString("IPAddress","tq"));
 
         if(!location.getAll().isEmpty()){
 //            float latitude = location.getFloat("latitude", 0f);
@@ -129,14 +134,15 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 String longitude = String.valueOf(location.getFloat("longitude", 0f));
 
                 //사용자 정보를 서버에 전송
-                infoConnector.publish("userInfo/name", userName);
-                infoConnector.publish("userInfo/password", userPassword);
-                infoConnector.publish("userInfo/wifiName", wifiName);
-                infoConnector.publish("userInfo/wifiPassword", wifiPassword);
-                infoConnector.publish("userInfo/IPAddress", IPAddress);
-                infoConnector.publish("userInfo/cityName", locationData);
-                infoConnector.publish("userInfo/latitude", latitude);
-                infoConnector.publish("userInfo/longitude", longitude);
+                String tempTopic= "userInfo/" + userName + "/";
+//                infoConnector.publish("userInfo/name", userName);
+                infoConnector.publish(tempTopic+"password", userPassword);
+                infoConnector.publish(tempTopic+"wifiName", wifiName);
+                infoConnector.publish( tempTopic+"wifiPassword", wifiPassword);
+                infoConnector.publish(tempTopic+"IPAddress", IPAddress);
+                infoConnector.publish(tempTopic+"cityName", locationData);
+                infoConnector.publish(tempTopic+"latitude", latitude);
+                infoConnector.publish(tempTopic+"longitude", longitude);
                 infoConnector.publish("userInfo/config", "save");
                 infoConnector.disconnect();
 
@@ -154,10 +160,8 @@ public class UserInfoConfigActivity extends AppCompatActivity {
                 editor.clear();
                 editor.apply();
 
-                infoConnector.publish("userInfo/config", "reset");
-
                 if ( resetUserName != null && ! resetUserName.isEmpty()) {
-                infoConnector.publish( "userInfo/name", resetUserName);
+                    infoConnector.publish("userInfo/config", "reset: "+resetUserName);
                 }
                 editor.clear();
                 editor.apply();
