@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.cozyiot.func.*;
 import com.example.cozyiot.R;
 import com.example.cozyiot.foreGroundService;
 import com.example.cozyiot.windowControllerActivity;
@@ -44,7 +45,8 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private int addClickCount = 1;
     private Context context;
     private Boolean adminFlag;
-    public List<machineData> machineDataList;
+    public List<machineData> machineDataList;;
+    private SynchronizedMqttConnector connector;
 
     private final Gson gson = new Gson();
 
@@ -58,10 +60,12 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         this.addClickListener = listener;
     }
 
-    public machineDataAdapter(Context context, Boolean adminFlag, List<machineData> machineDataList) {
+    public machineDataAdapter(Context context, Boolean adminFlag, List<machineData> machineDataList, SynchronizedMqttConnector Connector) {
         this.context = context;
         this.adminFlag = adminFlag;
         this.machineDataList = machineDataList;
+        this.connector = Connector;
+
 
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         addClickCount = prefs.getInt(KEY_ADD_CLICK_COUNT, 1);
@@ -100,14 +104,56 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             int colorIndex = position % cardColors.length;
             machineHolder.cardInnerLayout.setBackgroundColor(cardColors[colorIndex]);
 
-            SharedPreferences preferences = context.getSharedPreferences("auto", MODE_PRIVATE);
-            SharedPreferences.Editor editor = preferences.edit();
-            String switchFlag = preferences.getString("auto", "false");
-            if(switchFlag.equals("true")){
+//            SharedPreferences preferences = context.getSharedPreferences("auto", MODE_PRIVATE);
+            SharedPreferences preferences = context.getSharedPreferences("UserInfo", MODE_PRIVATE);
+//            SharedPreferences.Editor editor = preferences.edit();
+//            String userName = preferences.getString("userName", "");
+//            String userPassword = preferences.getString("userPassword", "");
+//            String IPAddress = preferences.getString("IPAddress", "");
+//
+//            connector = new MQTTDataFunc(IPAddress, userName, userPassword);
+
+            connector.subscribe("pico", "auto_run");
+            connector.publish("pico", "auto_run");
+            String autoFlag = connector.getLatestMessage("pico", "auto_run");
+            if(autoFlag == null){
+                int retryCount = 0;
+                while (autoFlag == null && retryCount < 50){
+                    try{
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    autoFlag = connector.getLatestMessage("pico", "auto_run");
+                }
+            }
+            if(autoFlag.equals("true")){
                 machineHolder.deviceSwitch.setChecked(true);
             } else {
                 machineHolder.deviceSwitch.setChecked(false);
             }
+
+//            String autoFlag;
+//            if(connector.callData("pico","auto_run").equals("success")){
+//                autoFlag = connector.getData("pico", "auto_run");
+//                if(!autoFlag.isEmpty() || autoFlag != null){
+//                    if(autoFlag.equals("open")){
+//                        machineHolder.deviceSwitch.setChecked(true);
+//                    } else {
+//                        machineHolder.deviceSwitch.setChecked(false);
+//                    }
+//                } else {
+//                    machineHolder.deviceSwitch.setChecked(false);
+//                }
+//                machineHolder.deviceSwitch.setChecked(false);
+//            }
+
+//            String switchFlag = preferences.getString("auto", "false");
+//            if(switchFlag.equals("true")){
+//                machineHolder.deviceSwitch.setChecked(true);
+//            } else {
+//                machineHolder.deviceSwitch.setChecked(false);
+//            }
 
             machineHolder.deviceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
@@ -115,20 +161,17 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     Intent serviceIntent = new Intent(context, foreGroundService.class);
                     Intent controllerIntent = new Intent(context, windowControllerActivity.class);
                     if(isChecked){
-                        String topic = "window/auto_motor_request";
-                        String message = "true";
+                        connector.publish("pico/auto_run", "open");
 //                        controllerConnector.publish(topic, message);
-                        editor.putString("auto", "true");
-                        editor.apply();
+//                        editor.putString("auto", "true");
+//                        editor.apply();
                         context.startService(serviceIntent);
                     }else{
-                        String topic = "window/auto_motor_request";
-                        String message = "false";
+                        connector.publish("pico/auto_run", "close");
 //                        controllerConnector.publish(topic, message);
-                        editor.putString("auto", "false");
-                        editor.apply();
+//                        editor.putString("auto", "false");
+//                        editor.apply();
                         context.stopService(serviceIntent);
-
                     }
                 }
             });

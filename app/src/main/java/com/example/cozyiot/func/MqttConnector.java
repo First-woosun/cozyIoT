@@ -60,17 +60,25 @@ public class MqttConnector {
         }
     }
 
+    public boolean isConnected() {
+        return mqttClient != null && mqttClient.isConnected();
+    }
+
+
     public void publish(String topic, String message) {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
                 MqttMessage mqttMessage = new MqttMessage(message.getBytes());
                 mqttClient.publish(topic, mqttMessage);
-                Log.d(TAG, "Message published to topic: " + topic);
+                Log.d(TAG, "Message published to topic, message: " + topic+ ", " + message);
+//                return "success";
             } else {
                 Log.e(TAG, "MQTT client not connected");
+//                return "fail";
             }
         } catch (MqttException e) {
             Log.e(TAG, "Failed to publish message", e);
+//            return "error";
         }
     }
 
@@ -101,6 +109,7 @@ public class MqttConnector {
     }
 
     public String getLatestMessage(String topic) {
+        Log.i("returnData: ", messageMap.get(topic));
         return messageMap.get(topic);
     }
 }

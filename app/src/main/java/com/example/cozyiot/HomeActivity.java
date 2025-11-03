@@ -8,6 +8,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,21 +24,23 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import android.widget.*;
 
-import com.example.cozyiot.func.MqttConnector;
+import com.example.cozyiot.func.*;
 import com.google.android.material.navigation.NavigationView;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import org.json.JSONObject;
 import com.google.gson.Gson;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.lang.reflect.Type;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class HomeActivity extends AppCompatActivity {
 
-    private MqttConnector homeConnector;
+    private MQTTDataFunc homeConnector;
+    private SynchronizedMqttConnector Connector;
 
     private ImageButton machineAddBtn;
 
@@ -56,7 +63,7 @@ public class HomeActivity extends AppCompatActivity {
     private boolean adminFlag;
 
     private String Address; private  String Name; private String Password;
-    private String city; private float latitude; private float longtitude;
+    private String city; private String weatherID; private String temper;
 
     private boolean threadFlag = true;
 
@@ -65,6 +72,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_home);
+        Connector = SynchronizedMqttConnector.getInstance();
 
         cityName = findViewById(R.id.tv_city_name);
         weatherStatus = findViewById(R.id.tv_weather_status);
@@ -77,37 +85,45 @@ public class HomeActivity extends AppCompatActivity {
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         location = getSharedPreferences("location_prefs", MODE_PRIVATE);
 
-        city = location.getString("cityName", "");
-        latitude = location.getFloat("latitude", 0f);
-        longtitude = location.getFloat("longtitude", 0f);
+//        city = location.getString("cityName", "");
+//        latitude = location.getFloat("latitude", 0f);
+//        longtitude = location.getFloat("longtitude", 0f);
 
         //계정 유형에 따른 데이터 load
         if(adminFlag){
             Address = "218.49.196.80:1883";
             Name = "cozydow";
             Password = "1234";
+            System.out.println("관리자");
         } else {
             Address = preferences.getString("IPAddress", "");
             Name = preferences.getString("userName", "");
             Password = preferences.getString("userPassword", "");
+            System.out.println("유저");
         }
 
-        if(!location.getAll().isEmpty()){
-            city = location.getString("cityName", "");
-            latitude = location.getFloat("latitude", 0f);
-            longtitude = location.getFloat("longtitude", 0f);
-            cityName.setText(city);
+        loadWeatherAndCityName();
 
-            loadWeatherFromSavedLocation(latitude, longtitude);
-        } else {
-            cityName.setText("???");
-            weatherStatus.setVisibility(INVISIBLE);
-            temperature.setText("0°C");
-        }
+//        if(!location.getAll().isEmpty()){
+//            city = location.getString("cityName", "");
+//            latitude = location.getFloat("latitude", 0f);
+//            longtitude = location.getFloat("longtitude", 0f);
+//            cityName.setText(city);
+//
+//            loadWeatherFromSavedLocation(latitude, longtitude);
+//            city = homeConnector.callData("cityName");
+//            latitude = Float.parseFloat(homeConnector.callData("latitude"));
+//            longitude = Float.parseFloat(homeConnector.callData("longitude"));
+//
+//            loadWeatherFromSavedLocation(latitude, longitude);
+//        } else {
+//            cityName.setText("???");
+//            weatherStatus.setVisibility(INVISIBLE);
+//            temperature.setText("0°C");
+//        }
 
-        homeConnector = new MqttConnector(Address, Name, Password);
-
-        //machineAddBtn = findViewById(R.id.btn_add_item);
+//        homeConnector = new MqttConnector(Address, Name, Password);
+//        machineAddBtn = findViewById(R.id.btn_add_item);
 
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
@@ -124,7 +140,7 @@ public class HomeActivity extends AppCompatActivity {
             machineDataList.add(new machineData("window")); // 기본값
         }
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
-        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList);
+        machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList, Connector);
         recyclerView.setAdapter(machineDataAdapter);
 
         machineDataAdapter.setOnAddClickListener(() -> {
@@ -175,6 +191,10 @@ public class HomeActivity extends AppCompatActivity {
                     userInfoIntent.putExtra("admin", false);
                     startActivity(userInfoIntent);
                 }
+            //식물 정보 추가 페이지 진입
+            } else if (id == R.id.nav_Plant_config) {
+                Intent indoorConditionIntent = new Intent(this, indoorStatusConfigActivity.class);
+                startActivity(indoorConditionIntent);
             }
             drawerLayout.closeDrawer(GravityCompat.END);
             return true;
@@ -189,6 +209,18 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(new Intent(this, MainActivity.class));
             finish();
         });
+
+        // Android 13 이상에서 알림 권한 요청
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        1001
+                );
+            }
+        }
     }
 
     @Override
@@ -197,6 +229,7 @@ public class HomeActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.END);;
         }else{
             threadFlag = false;
+            Connector.disconnect();
             super.onBackPressed();
         }
     }
@@ -205,63 +238,78 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
-        city = location.getString("cityName", "");
-        latitude = location.getFloat("latitude", 0f);
-        longtitude = location.getFloat("longtitude", 0f);
-        cityName.setText(city);
-
-        loadWeatherFromSavedLocation(latitude, longtitude);
+        loadWeatherAndCityName();
 
         super.onResume();
     }
 
 
-    private void loadWeatherFromSavedLocation(float lat, float lon) {
-        String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
-        String url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat +
-                "&lon=" + lon +
-                "&appid=" + apiKey +
-                "&units=metric&lang=kr";
-
+    private void loadWeatherAndCityName() {
         new Thread(() -> {
             if(threadFlag){
                 try {
-                    URL requestUrl = new URL(url);
-                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-                    conn.setRequestMethod("GET");
+                    //도시이름 받아오기
+                    Connector.subscribe("userInfo", "cityName");
+                    Connector.publish("userInfo", "cityName");
+                    Connector.subscribe("userInfo", "weather");
+                    Connector.publish("userInfo", "weather");
 
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder result = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
+                    Thread.sleep(200);
+
+                    city = Connector.getLatestMessage("userInfo", "cityName");
+                    String weatherCollection = Connector.getLatestMessage("userInfo", "weather");
+
+                    runOnUiThread(() -> cityName.setText(city));
+
+                    if(weatherCollection != null){
+                        JsonParser jsonParser = new JsonParser();
+                        JsonObject jsonCollection = (JsonObject) jsonParser.parse(weatherCollection);
+
+                        String temper = String.valueOf(jsonCollection.get("temperature"));
+                        int weatherId = Integer.parseInt(String.valueOf(jsonCollection.get("description")));
+
+
+                        if(weatherId < 600 && weatherId >= 200){
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
+                        } else if (weatherId >= 600 && weatherId <700) {
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
+                        } else if (weatherId > 800){
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
+                        } else {
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
+                        }
+
+                        runOnUiThread(() -> temperature.setText(temper));
                     }
-                    reader.close();
-
-                    JSONObject response = new JSONObject(result.toString());
-                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
-                    double temp = response.getJSONObject("main").getDouble("temp");
-
-                    String temp_now = temp+"°C";
-
-                    if(weatherId < 600 && weatherId >= 200){
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
-                    } else if (weatherId >= 600 && weatherId <700) {
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
-                    } else if (weatherId > 800){
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
-                    } else {
-                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
-                    }
-
-                    runOnUiThread(() -> temperature.setText(temp_now));
 
                     Thread.sleep(30000);
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    public static String decodeUnicode(String unicodeStr) {
+        StringBuilder sb = new StringBuilder();
+        Pattern pattern = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        Matcher matcher = pattern.matcher(unicodeStr);
+
+        int lastEnd = 0;
+        while (matcher.find()) {
+            // 매치되지 않은 일반 문자 처리
+            sb.append(unicodeStr, lastEnd, matcher.start());
+
+            // 16진수를 문자로 변환
+            int code = Integer.parseInt(matcher.group(1), 16);
+            sb.append((char) code);
+
+            lastEnd = matcher.end();
+        }
+        sb.append(unicodeStr.substring(lastEnd));
+        sb.deleteCharAt(0);
+        sb.deleteCharAt(sb.length()-1);
+
+        return sb.toString();
     }
 }

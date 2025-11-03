@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- 굵은 트랙과 어울리도록 크기 증가 -->
+    <size android:width="25dp" android:height="25dp" />
+    <!-- 내부 색상은 메인 XML에서 thumbTint로 설정됨 -->
+    <solid android:color="#FF5722" />
+    <!-- 흰색 테두리로 가시성 확보 -->
+    <stroke android:width="0.1dp" android:color="#000000" />
+</shape>

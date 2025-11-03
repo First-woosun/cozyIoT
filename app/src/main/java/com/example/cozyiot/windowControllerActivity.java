@@ -1,33 +1,19 @@
 package com.example.cozyiot;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.*;
-import com.example.cozyiot.func.MqttConnector;
-import com.example.cozyiot.foreGroundService;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import com.example.cozyiot.func.SynchronizedMqttConnector;
+
+import java.util.Objects;
 
 public class windowControllerActivity extends AppCompatActivity {
 
-    private static SharedPreferences preferences;
-    private static SharedPreferences auto;
-    private static SharedPreferences windowStatus;
-    private static SharedPreferences.Editor windowEditor;
-    private static SharedPreferences.Editor editor;
-    private static String userName;
-    private static String userPassword;
-    private static String IPAddress;
     private final int[] tempColors = {
             Color.parseColor("#f88f59"),
             Color.parseColor("#f97247"),
@@ -43,22 +29,17 @@ public class windowControllerActivity extends AppCompatActivity {
             Color.parseColor("#0a78bf"),
             Color.parseColor("#000080"),
     };
+
     //안드로이드 세그먼트 선언
     Button openBtn; Button closeBtn;
     Switch autoSwitch;
     ImageView windowState;
     TextView huminityView, backBtn;
 
-    //MQTT 클라이언트가 연결되어 있는지 확인하는 flag(추후 수정)
-    //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
-    private static boolean isConnect;
-
     //창문의 현재 상태를 파악하는 flag (추후 수정)
-    //TODO 서버에 저장된 flag값을 읽어와 저장하도록 수정
-    private static boolean isopen;
+    private static String windowStatus;
 
-    //관리자 게정 여부
-    private static  boolean adminFlag;
+    private static String isAuto;
 
     //습도 데이터 처리를 위한 멀티스레드 작동 flag
     private static boolean multiThreadRun;
@@ -66,7 +47,8 @@ public class windowControllerActivity extends AppCompatActivity {
     private static String huminity;
     private static String temperature;;
     private boolean moving = false;  // 또는 false
-    private static MqttConnector controllerConnector;
+    private static SynchronizedMqttConnector connector;
+
     private int dpToPx(float dp) {
         float scale = getResources().getDisplayMetrics().density;
         return (int) (dp * scale + 0.5f);
@@ -77,12 +59,6 @@ public class windowControllerActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_window_controller);
 
-        preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
-        auto = getSharedPreferences("auto", MODE_PRIVATE);
-        editor = auto.edit();
-
-        Intent intent = getIntent();
-        adminFlag = intent.getBooleanExtra("admin", false);
         openBtn = findViewById(R.id.btn_open);
         closeBtn = findViewById(R.id.btn_close);
         windowState = findViewById(R.id.window_state);
@@ -90,93 +66,45 @@ public class windowControllerActivity extends AppCompatActivity {
         backBtn = findViewById(R.id.btn_back);
         autoSwitch = findViewById(R.id.switch_auto);
 
-
-        if(adminFlag){
-            userName = "cozydow";
-            userPassword = "1234";
-            IPAddress = "218.49.196.80:1883";
-        } else {
-            if(!preferences.getAll().isEmpty()){
-                userName = preferences.getString("userName", "");
-                userPassword = preferences.getString("userPassword", "");
-                IPAddress = preferences.getString("IPAddress", "");
-            } else {
-                Toast.makeText(this, "사용자 정보 조회 실패", Toast.LENGTH_SHORT).show();
-                finish();
-            }
-        }
-
-        isConnect = controllerConnector.connect();
-
-//        if (foreGroundService.auto != null) {
-//            controllerConnector = foreGroundService.auto;
-//            isConnect = controllerConnector.connect();
-//        } else {
-//            foreGroundService.makeConnect(IPAddress,userName,userPassword);
-//            controllerConnector = foreGroundService.auto;
-//            isConnect = controllerConnector.connect();
-//        }
-
-        controllerConnector.subscribe("window/auto_motor_request");
-        String autoFlag = auto.getString("auto", "false");
-        try {
-            if(autoFlag.equals("true")){
-                autoSwitch.setChecked(true);
-            } else if(autoFlag.equals("false")){
-                autoSwitch.setChecked(false);
-            } else {
-                Log.d("auto", "ERROR");
-            }
-        } catch (NullPointerException nullPointerException) {
-            autoSwitch.setChecked(false);
-        }
+        connector = SynchronizedMqttConnector.getInstance();
 
         startHuminityThread();
 
-        windowStatus = getSharedPreferences("windowPrefs", MODE_PRIVATE);
-        windowEditor = windowStatus.edit();
-        isopen = windowStatus.getBoolean("status", false);
+        connector.subscribe("pico", "window_status");
+        connector.publish("pico", "window_status");
+        connector.subscribe("pico", "motor_status");
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        windowStatus = connector.getLatestMessage("pico", "window_status");
+        Log.i("status", windowStatus);
 
-        if(!isopen){
-            if(moving == false){
+        if(windowStatus.equals("\"Close\"")){
+            if(!moving){
                 set_status_window("default");
             }
 
         } else {
-            if(moving == false){
+            if(!moving){
                 set_status_window("open");
             }
         }
-
 
         //창문 자동 제어
         autoSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 Intent serviceIntent = new Intent(windowControllerActivity.this, foreGroundService.class);
+                serviceIntent.putExtra("windowStatus", windowStatus);
                 if(isChecked){
-                    String topic = "pico/auto_run";
-                    String message = "true";
-                    controllerConnector.publish(topic, message);
-                    editor.putString("auto", "true");
-                    editor.apply();
-//                    isConnect = foreGroundService.callDisconnect();
+                    connector.autoMotorRequestPublish("true");
 //                    multiThreadRun = false;
                     startService(serviceIntent);
                 }else{
-                    String topic = "pico/auto_run";
-                    String message = "false";
-                    controllerConnector.publish(topic, message);
-                    editor.putString("auto", "false");
-                    editor.apply();
-                    try {
-                        Log.d("sleep", "잠깐 자쇼 ㅋㅋ");
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    connector.autoMotorRequestPublish("false");
                     stopService(serviceIntent);
-                    isConnect = controllerConnector.connect();
 //                    startHuminityThread();
                     Log.d("manual", "conncet");
                 }
@@ -184,45 +112,66 @@ public class windowControllerActivity extends AppCompatActivity {
         });
 
         //창문 개방 버튼
-
         openBtn.setOnClickListener(v -> {
-            if(isConnect){
-                if(!isopen){
-                    String topic = "window/motor_request";
-                    String message = "open";
-                    controllerConnector.publish(topic, message);
-                    isopen = true;
+            connector.publish("pico", "motor_status");
+            connector.publish("pico", "window_status");
+            String motorStatus = null;
+            try {
+                while (motorStatus == null){
+                    motorStatus = connector.getLatestMessage("pico", "motor_status");
+                    Thread.sleep(200);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            windowStatus = connector.getLatestMessage("pico", "window_status");
+            Log.i("status", motorStatus);
+            if(motorStatus.equals("\"False\"")){
+                if(windowStatus.equals("\"Close\"")){
+                    String topic = "pico/motor_request";
+                    String message = "Open";
+                    connector.publish(topic, message);
                     Toast.makeText(this, "창문을 개방합니다.", Toast.LENGTH_SHORT).show();
                     if(moving == false){
                         set_status_window("open");
                     }
-
-
-                    windowEditor.putBoolean("status", true);
                 } else {
                     Toast.makeText(this, "이미 창문이 열려있습니다.", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "장치가 연결되어있지 않습니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "현재 창문이 동작중입니다.", Toast.LENGTH_SHORT).show();
             }
         });
 
+        //창문 닫기 버튼
         closeBtn.setOnClickListener(v ->{
-            if(isConnect){
-                if(isopen){
-                    String topic = "window/motor_request";
-                    String message = "close";
-                    controllerConnector.publish(topic, message);
-                    Toast.makeText(this, "창문을 폐쇠합니다.", Toast.LENGTH_SHORT).show();
+            connector.publish("pico", "motor_status");
+            connector.publish("pico", "window_status");
+            String motorStatus = null;
+            try {
+                while (motorStatus == null){
+                    motorStatus = connector.getLatestMessage("pico", "motor_status");
+                    Thread.sleep(200);
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            windowStatus = connector.getLatestMessage("pico", "window_status");
+            Log.i("status", motorStatus);
+            if(motorStatus.equals("\"False\"")){
+                if(windowStatus.equals("\"Open\"")){
+                    String topic = "pico/motor_request";
+                    String message = "Close";
+                    connector.publish(topic, message);
+                    Toast.makeText(this, "창문을 닫습니다.", Toast.LENGTH_SHORT).show();
                     if(moving == false){
                         set_status_window("close");
                     }
-                    windowEditor.putBoolean("status", false);
                 } else {
                     Toast.makeText(this, "이미 창문이 닫혀있습니다.", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                Toast.makeText(this, "장치가 연결되어있지 않습니다.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "창문이 동작중입니다.", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -232,7 +181,6 @@ public class windowControllerActivity extends AppCompatActivity {
 //            startActivity(new Intent(this, HomeActivity.class));
             finish();
         });
-
 
     }
     private void set_status_window(String status) {
@@ -245,7 +193,7 @@ public class windowControllerActivity extends AppCompatActivity {
                         .withEndAction(new Runnable() {
                             @Override
                             public void run() {
-                                isopen = true;
+//                                isopen = "open";
                                 moving = false;  // 3초 애니메이션 끝난 후 실행
                             }
                         })
@@ -260,7 +208,7 @@ public class windowControllerActivity extends AppCompatActivity {
                         .withEndAction(new Runnable() {
                             @Override
                             public void run() {
-                                isopen = false;
+//                                isopen = "close";
                                 moving = false;  // 3초 애니메이션 끝난 후 실행
                             }
                         })
@@ -273,41 +221,34 @@ public class windowControllerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        foreGroundService.callDisconnect();
+//        foreGroundService.callDisconnect();
         multiThreadRun = false;
 //        startActivity(new Intent(this, HomeActivity.class));
         finish();
         super.onBackPressed();
     }
 
-    public static void reconnect(){
-        controllerConnector.connect();
-    }
-
     private void startHuminityThread() {
         Thread thread = new Thread(() -> {
             multiThreadRun = true;
             Log.i("multiThread", "start multiThread");
-            controllerConnector.subscribe("pico/dht22");
 
             while (multiThreadRun) {
-                Log.i("thread", "run");
-                String JsonMessage = controllerConnector.getLatestMessage("pico/dht22");
+                connector.subscribe("pico", "temp");
+                connector.publish("pico", "temp");
+                connector.subscribe("pico", "hum");
+                connector.publish("pico", "hum");
 
                 try {
-                    JSONObject jsonObject = new JSONObject(JsonMessage);
-                    temperature = jsonObject.getString("temp");
-                    huminity = jsonObject.getString("hum") + "%";
-                    Log.i("threadcheck","humtemp");
-
                     runOnUiThread(() -> {
-                        huminityView.setText(huminity);
+                        String currentHumidity = connector.getLatestMessage("pico", "hum")+"%";
+                        huminityView.setText(currentHumidity);
 
                         // 습도 이미지 처리
                         ImageView humidityImage = findViewById(R.id.humidityImage);
                         int humValue = 0;
                         try {
-                            humValue = Integer.parseInt(huminity.replace("%", ""));
+                            humValue = Integer.parseInt(currentHumidity.replace("%", ""));
                         } catch (NumberFormatException e) {
                             humValue = 0;
                         }
@@ -339,16 +280,18 @@ public class windowControllerActivity extends AppCompatActivity {
                         ImageView temperatureImage = findViewById(R.id.temperatureImage); // 온도 이미지 표시용 ImageView (레이아웃에 있어야 함)
                         ImageView overlayImage = findViewById(R.id.overlayImage);
                         FrameLayout frameLayout = findViewById(R.id.temperatureImageframe);
+                        String currentTemperature = connector.getLatestMessage("pico", "temp");
+
                         float tempValue = 0f;
                         try {
-                            tempValue = Float.parseFloat(temperature);
+                            tempValue = Float.parseFloat(currentTemperature);
                         } catch (NumberFormatException e) {
                             tempValue = 0f;
                         }
 
-                        temperatureView.setText(String.format("%.1f°C", tempValue));FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
+                        temperatureView.setText(String.format("%.1f°C", tempValue));
+                        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) temperatureImage.getLayoutParams();
                         FrameLayout.LayoutParams param = (FrameLayout.LayoutParams) overlayImage.getLayoutParams();
-
 
                         if (tempValue <= 10) {
                             param.height = dpToPx(45);
@@ -379,14 +322,12 @@ public class windowControllerActivity extends AppCompatActivity {
                         temperatureImage.setLayoutParams(params);
                     });
 
-                } catch (JSONException e) {
-                    runOnUiThread(() -> huminityView.setText("데이터 오류"));
                 } catch (NullPointerException e) {
                     runOnUiThread(() -> huminityView.setText("0%"));
                 }
 
                 try {
-                    Thread.sleep(20000);
+                    Thread.sleep(200000);
                 } catch (InterruptedException e) {
                     break;
                 }

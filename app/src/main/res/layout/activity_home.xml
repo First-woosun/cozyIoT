@@ -57,7 +57,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="20dp"
-                    android:text="서울"
+                    android:text=""
                     android:textColor="#ffffff"
                     android:textSize="50sp"
                     android:textStyle="bold" />
@@ -82,7 +82,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="15dp"
                         android:layout_marginBottom="10dp"
-                        android:text="24°C"
+                        android:text="°C"
                         android:textColor="#ffffff"
                         android:textSize="30sp" />
                 </LinearLayout>

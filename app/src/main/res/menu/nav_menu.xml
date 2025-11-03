@@ -4,14 +4,18 @@
         <item
             android:id="@+id/nav_user_info_config"
             android:icon="@drawable/userinfo_logo"
-            android:title="UserInfo" />
+            android:title="사용자 정보" />
         <item
             android:id="@+id/nav_Module_config"
             android:icon="@drawable/moduleplus_logo"
-            android:title="ModulePlus" />
+            android:title="장치 추가" />
         <item
             android:id="@+id/nav_Status_config"
             android:icon="@drawable/status_logo"
-            android:title="Status" />
+            android:title="상태" />
+        <item
+            android:id="@+id/nav_Plant_config"
+            android:icon="@drawable/plantinfo_logo"
+            android:title="식물 환경 설정" />
     </group>
 </menu>

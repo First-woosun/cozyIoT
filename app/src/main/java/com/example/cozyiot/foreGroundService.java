@@ -1,5 +1,6 @@
 package com.example.cozyiot;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,228 +9,143 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
-import com.example.cozyiot.func.MqttConnector;
-
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import com.example.cozyiot.func.SynchronizedMqttConnector;
 
 public class foreGroundService extends Service {
 
-    private String apiKey = "45253cb5ee7d2cf08c1cc1d6b4a811d8";
-    private String url;
-
     private Context context;
+
+    private static String mq_135;  // 공기질;
+    private static String temp; // 온도
+    private static String hum;  // 습도
+    private static String bh1750;     // 광량
 
     private static final String TAG = "CozyIOT FOREGROUND";
 
-    // Notification
+    // Foreground 알림
     private static final int NOTI_ID = 1;
 
-    public static MqttConnector auto;
-    private float lat;
-    private float lon;
+    // 사용자 알람
+    private static final int ALERT_ID = 2001;
+    private static final long ALERT_COOLDOWN = 5 * 60 * 1000; // 5분
+    private long lastNotificationTime = 0;
 
-    private SharedPreferences windowstatus;
-    private SharedPreferences.Editor windowEditor;
+    private static SynchronizedMqttConnector connector;
 
-    public foreGroundService() {
-    }
+    private static String windowStatusApp;
+    private static String windowStatusNow;
+
+    public foreGroundService() {}
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        connector = SynchronizedMqttConnector.getInstance();
 
-        SharedPreferences userInfo = getSharedPreferences("UserInfo", MODE_PRIVATE);
-        String Address = userInfo.getString("IPAddress", "");
-        String Name = userInfo.getString("userName", "");
-        String Password = userInfo.getString("userPassword", "");
-        makeConnect(Address,Name,Password);
-
-        SharedPreferences locationPrefs = getSharedPreferences("location_prefs", MODE_PRIVATE);
-        lat = locationPrefs.getFloat("latitude", 0f);
-        lon = locationPrefs.getFloat("longtitude", 0f);
-
-        windowstatus = getSharedPreferences("windowPref", MODE_PRIVATE);
-        windowEditor = windowstatus.edit();
-
-        createNotification();
+        createForegroundNotification();
         mThread.start();
         Log.d(TAG, "onCreate");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
         Log.d(TAG, "onStartCommand");
-
+        windowStatusApp = intent.getStringExtra("windowStatus");
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private Thread mThread = new Thread("My Thread"){
+    private Thread mThread = new Thread("My Thread") {
         @Override
         public void run() {
             super.run();
 
-            boolean weatherFlag = false;
-            boolean huminityFlag = false;
-            boolean temperatureFlag = false;
-            boolean rainFlag = false;
-
-            float huminity;
-            float temperature;
-            String rain;
-
-            url = "https://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&appid=" + apiKey + "&units=metric&lang=kr";
-
-            auto.connect();
-
-            while (true){
+            while (true) {
                 try {
                     Log.i("foreGroundService", "run");
-
-                    URL requestUrl = new URL(url);
-                    HttpURLConnection conn = (HttpURLConnection) requestUrl.openConnection();
-                    conn.setRequestMethod("GET");
-
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder result = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        result.append(line);
-                    }
-                    reader.close();
-
-                    JSONObject response = new JSONObject(result.toString());
-
-                    //자동제어에 필요한 데이터 필드
-                    int weatherId = response.getJSONArray("weather").getJSONObject(0).getInt("id");
-                    double temp = response.getJSONObject("main").getDouble("temp");
-
-                    // 온습도 데이터 load
-                    auto.subscribe("pico/dht22");
-                    String jsonMessage = auto.getLatestMessage("pico/dht22");
-                    if (!isStringEmpty(jsonMessage)) {
-                        JSONObject humAndTemp = new JSONObject(jsonMessage);
-                        huminity = (float) humAndTemp.getDouble("hum");
-                        temperature = (float) humAndTemp.getDouble("temp");
-                    }else{
-                        huminity = 0.0f;
-                        temperature = 0.0f;
-                    }
-
-                    Log.i("data", "hum");
-
-                    // 강우 여부 로드
-                    auto.subscribe("pico/rain");
-                    String rainMessage = auto.getLatestMessage("pico/rain");
-                    if (!isStringEmpty(rainMessage)) {
-                        JSONObject isRain = new JSONObject(rainMessage);
-                        rain = isRain.getString("rain");
-                    } else {
-                        rain = "1";
-                    }
+                    connector.subscribe("pico", "temp");
+                    connector.publish("pico", "temp");
+                    connector.subscribe("pico","hum");
+                    connector.publish("pico", "hum");
+                    connector.subscribe("pico", "mq_135");
+                    connector.publish("pico","mq_135");
+                    connector.subscribe("pico", "bh1750");
+                    connector.publish("pico", "bh1750");
+                    connector.subscribe("pico", "rain");
+                    connector.publish("pico", "rain");
+                    connector.subscribe("pico", "window_status");
+                    connector.publish("pico", "window_status");
 
 
-                    Log.i("data", "rain");
+                    Thread.sleep(200);
 
-                    //날씨에 따른 창문 개방 여부
-                    if (weatherId < 800 && weatherId >= 200) {
-                        // 창문을 열면 안되는 날씨
-                        weatherFlag = false;
-                    }else {
-                        // 창문을 열어도 되는 날씨
-                        weatherFlag = true;
-                    }
+                    temp = connector.getLatestMessage("pico", "temp");
+                    hum = connector.getLatestMessage("pico", "hum");
+                    mq_135 = connector.getLatestMessage("pico", "mq_135");
+                    bh1750 = connector.getLatestMessage("pico", "bh1750");
+                    windowStatusNow = connector.getLatestMessage("pico", "window_status");
 
-                    // 내부 습도에 따른 창문 개방 여부
-                    if (huminity < 50f || huminity > 60f){
-                        // 환기 필요
-                        huminityFlag = true;
-                    } else {
-                        // 환기 불필요
-                        huminityFlag = false;
-                    }
-
-                    if(rain.equals("0")){
-                        rainFlag = true;
-                    } else {
-                        rainFlag = false;
-                    }
-                    
-                    // 자동제어 로직부
-//                    if (weatherFlag) {
-//                        auto.publish("window/motor_request", "open");
-//                        windowEditor.putBoolean("status", true);
-//
-//                    } else {
-//                        auto.publish("window/motor_request", "close");
-//                        windowEditor.putBoolean("status", false);
-//                    }
-
-                    if(huminityFlag){
-                        if(weatherFlag || rainFlag){
-                            auto.publish("window/motor_request", "open");
-                            windowEditor.putBoolean("status", true);
-                        } else {
-                            auto.publish("window/motor_request", "close");
-                            windowEditor.putBoolean("status", false);
-                        }
-                    } else {
-                        if(weatherFlag || rainFlag){
-                            auto.publish("window/motor_request", "open");
-                            windowEditor.putBoolean("status", true);
-                        } else {
-                            auto.publish("window/motor_request", "close");
-                            windowEditor.putBoolean("status", false);
+                    if(!windowStatusApp.equals(windowStatusNow)){
+                        if(windowStatusNow.equals("Open")){
+                            triggerAlertNotification("창문 열음", "창문을 개방했습니다.");
+                            windowStatusApp = windowStatusNow;
+                        } else if (windowStatusNow.equals("Close")) {
+                            triggerAlertNotification("창문 닫음", "창문을 닫았습니다.");
+                            windowStatusApp = windowStatusNow;
                         }
                     }
-                    
-                    Thread.sleep(20000);
+
+                    // 알림 조건 체크 (예: mq_135 > 300)
+                    if (!mq_135.isEmpty()) {
+                        try {
+                            int airValue = Integer.parseInt(mq_135);
+                            if (airValue > 300) {
+                                triggerAlertNotification("공기질 경고!", "공기질이 나빠졌습니다. 환기가 필요합니다. (현재 공기질 :"+airValue+")");
+                            }
+                        } catch (NumberFormatException e) {
+                            Log.e(TAG, "mq_135 파싱 오류: " + mq_135);
+                        }
+                    }
+
+                    Thread.sleep(300000); // 5초마다 측정
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    auto.disconnect();
-                    windowControllerActivity.reconnect();
                     break;
                 }
             }
         }
     };
 
-    private void createNotification() {
-
+    // Foreground Notification (항상 표시)
+    private void createForegroundNotification() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
 
         builder.setSmallIcon(R.mipmap.ic_launcher);
         builder.setContentTitle("CozyIot");
         builder.setContentText("자동 제어 동작중");
-
         builder.setColor(Color.WHITE);
 
         Intent notificationIntent = new Intent(this, windowControllerActivity.class);
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);  // 여기 수정됨
+                this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
-        builder.setContentIntent(pendingIntent); // 알림 클릭 시 이동
+        builder.setContentIntent(pendingIntent);
 
         NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -237,63 +153,64 @@ public class foreGroundService extends Service {
                     new NotificationChannel("default", "기본 채널", NotificationManager.IMPORTANCE_DEFAULT));
         }
 
-        notificationManager.notify(NOTI_ID, builder.build());
         Notification notification = builder.build();
         startForeground(NOTI_ID, notification);
     }
 
+    // 사용자 경고 알림
+    private void triggerAlertNotification(String title, String message) {
+        long currentTime = System.currentTimeMillis();
 
-//    private void createNotification() {
-//
-//        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default");
-//
-//        builder.setSmallIcon(R.mipmap.ic_launcher);
-//        builder.setContentTitle("Foreground Service");
-//        builder.setContentText("포그라운드 서비스");
-//
-//        builder.setColor(Color.WHITE);
-//
-//        Intent notificationIntent = new Intent(this, windowControllerActivity.class);
-//        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-//
-//        builder.setContentIntent(pendingIntent); // 알림 클릭 시 이동
-//
-//        // 알림 표시
-//        NotificationManager notificationManager = (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            notificationManager.createNotificationChannel(new NotificationChannel("default", "기본 채널", NotificationManager.IMPORTANCE_DEFAULT));
-//        }
-//
-////        notificationManager.notify(NOTI_ID, builder.build()); // id : 정의해야하는 각 알림의 고유한 int값
-////        Notification notification = builder.build();
-//        notificationManager.notify(NOTI_ID, builder.build());
-//        Notification notification = builder.build();
-//        startForeground(NOTI_ID, notification);
-//    }
+        // 5분 쿨다운 적용
+        if (currentTime - lastNotificationTime < ALERT_COOLDOWN) {
+            Log.d(TAG, "쿨다운 중: 알림 생략");
+            return;
+        }
+        lastNotificationTime = currentTime;
+
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        String channelId = "alert_channel";
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId, "경고 알림", NotificationManager.IMPORTANCE_HIGH);
+            manager.createNotificationChannel(channel);
+        }
+
+        Intent intent = new Intent(this, windowControllerActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        // Android 13 이상은 권한 체크 필요
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "알림 권한이 없음");
+                return;
+            }
+        }
+
+        manager.notify(ALERT_ID, builder.build());
+        Log.d(TAG, "알림 발생: " + title + " - " + message);
+    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
 
-        if (mThread != null){
+        if (mThread != null) {
             mThread.interrupt();
             mThread = null;
         }
 
         Log.d(TAG, "onDestroy");
-    }
-
-    public static  boolean callDisconnect(){
-        auto.disconnect();
-        return false;
-    }
-    public static boolean makeConnect(String Address, String Name, String Password) {
-        auto = new MqttConnector(Address, Name, Password);
-        return false;
-    }
-
-    static boolean isStringEmpty(String str) {
-        return str == null || str.trim().isEmpty();
     }
 }
