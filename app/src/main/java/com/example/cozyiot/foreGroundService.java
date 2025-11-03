@@ -18,16 +18,15 @@ import android.util.Log;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 
-import com.example.cozyiot.func.MQTTDataFunc;
+import com.example.cozyiot.func.SynchronizedMqttConnector;
 
 public class foreGroundService extends Service {
 
     private Context context;
 
-    private static String mq_135;  // 공기질
-    private static String dht22;
-    private static String dht22_temp; // 온도
-    private static String dht22_hum;  // 습도
+    private static String mq_135;  // 공기질;
+    private static String temp; // 온도
+    private static String hum;  // 습도
     private static String bh1750;     // 광량
 
     private static final String TAG = "CozyIOT FOREGROUND";
@@ -40,7 +39,10 @@ public class foreGroundService extends Service {
     private static final long ALERT_COOLDOWN = 5 * 60 * 1000; // 5분
     private long lastNotificationTime = 0;
 
-    private static MQTTDataFunc connector;
+    private static SynchronizedMqttConnector connector;
+
+    private static String windowStatusApp;
+    private static String windowStatusNow;
 
     public foreGroundService() {}
 
@@ -52,12 +54,7 @@ public class foreGroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
-        SharedPreferences userInfo = getSharedPreferences("UserInfo", MODE_PRIVATE);
-        String Address = userInfo.getString("IPAddress", "");
-        String Name = userInfo.getString("userName", "");
-        String Password = userInfo.getString("userPassword", "");
-        connector = new MQTTDataFunc(Address, Name, Password);
+        connector = SynchronizedMqttConnector.getInstance();
 
         createForegroundNotification();
         mThread.start();
@@ -67,6 +64,7 @@ public class foreGroundService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand");
+        windowStatusApp = intent.getStringExtra("windowStatus");
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -78,27 +76,36 @@ public class foreGroundService extends Service {
             while (true) {
                 try {
                     Log.i("foreGroundService", "run");
+                    connector.subscribe("pico", "temp");
+                    connector.publish("pico", "temp");
+                    connector.subscribe("pico","hum");
+                    connector.publish("pico", "hum");
+                    connector.subscribe("pico", "mq_135");
+                    connector.publish("pico","mq_135");
+                    connector.subscribe("pico", "bh1750");
+                    connector.publish("pico", "bh1750");
+                    connector.subscribe("pico", "rain");
+                    connector.publish("pico", "rain");
+                    connector.subscribe("pico", "window_status");
+                    connector.publish("pico", "window_status");
 
-                    // 센서값 받아오기
-//                    mq_135 = connector.callData("pico", "mq_135");
-                    if (mq_135.equals("success")) {
-//                        mq_135 = connector.getData("pico", "mq_135");
-                    } else {
-                        mq_135 = "";
-                    }
 
-//                    dht22 = connector.callData("pico", "dht22");
-                    if(dht22.equals("success")){
-//                        dht22 = connector.getData("pico", "dht22");
-                    } else {
-                        dht22 = "";
-                    }
+                    Thread.sleep(200);
 
-//                    bh1750 = connector.callData("pico", "bh1750");
-                    if (bh1750.equals("success")) {
-//                        bh1750 = connector.getData("pico", "bh1750");
-                    } else {
-                        bh1750 = "";
+                    temp = connector.getLatestMessage("pico", "temp");
+                    hum = connector.getLatestMessage("pico", "hum");
+                    mq_135 = connector.getLatestMessage("pico", "mq_135");
+                    bh1750 = connector.getLatestMessage("pico", "bh1750");
+                    windowStatusNow = connector.getLatestMessage("pico", "window_status");
+
+                    if(!windowStatusApp.equals(windowStatusNow)){
+                        if(windowStatusNow.equals("Open")){
+                            triggerAlertNotification("창문 열음", "창문을 개방했습니다.");
+                            windowStatusApp = windowStatusNow;
+                        } else if (windowStatusNow.equals("Close")) {
+                            triggerAlertNotification("창문 닫음", "창문을 닫았습니다.");
+                            windowStatusApp = windowStatusNow;
+                        }
                     }
 
                     // 알림 조건 체크 (예: mq_135 > 300)
@@ -106,7 +113,7 @@ public class foreGroundService extends Service {
                         try {
                             int airValue = Integer.parseInt(mq_135);
                             if (airValue > 300) {
-                                triggerAlertNotification("공기질 경고!", "공기질 수치가 위험 수준(" + airValue + ")을 넘었습니다. 환기가 필요합니다.");
+                                triggerAlertNotification("공기질 경고!", "공기질이 나빠졌습니다. 환기가 필요합니다. (현재 공기질 :"+airValue+")");
                             }
                         } catch (NumberFormatException e) {
                             Log.e(TAG, "mq_135 파싱 오류: " + mq_135);
@@ -117,7 +124,6 @@ public class foreGroundService extends Service {
 
                 } catch (Exception e) {
                     e.printStackTrace();
-                    windowControllerActivity.reconnect();
                     break;
                 }
             }

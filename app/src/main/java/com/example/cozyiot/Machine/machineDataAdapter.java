@@ -167,7 +167,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 //                        editor.apply();
                         context.startService(serviceIntent);
                     }else{
-                        connector.publish("pico/auto_run", "open");
+                        connector.publish("pico/auto_run", "close");
 //                        controllerConnector.publish(topic, message);
 //                        editor.putString("auto", "false");
 //                        editor.apply();

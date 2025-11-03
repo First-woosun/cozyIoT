@@ -138,6 +138,37 @@ public class SynchronizedMqttConnector {
         }
     }
 
+    // 자동 제어
+    public void autoMotorRequestPublish(String message) {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
+                String finalTopic = "auto_motor_request/";
+                String finalMessage = this.username+","+message;
+                mqttClient.publish(finalTopic, new MqttMessage(finalMessage.getBytes()));
+                Log.i(TAG, "Message published: " + message);
+            } else {
+                Log.e(TAG, "MQTT client not connected, publish failed");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Publish failed: " + e.getMessage());
+        }
+    }
+
+    // 일반 발행
+    public void plantPublish(String message) {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
+                String topic = "userInfo/plant/"+this.username;
+                mqttClient.publish(topic, new MqttMessage(message.getBytes()));
+                Log.i(TAG, "Message published: " + message);
+            } else {
+                Log.e(TAG, "MQTT client not connected, publish failed");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Publish failed: " + e.getMessage());
+        }
+    }
+
     // 연결 상태
     public boolean isConnected() {
         return mqttClient != null && mqttClient.isConnected();

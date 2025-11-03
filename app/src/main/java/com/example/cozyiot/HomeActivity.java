@@ -26,6 +26,8 @@ import android.widget.*;
 
 import com.example.cozyiot.func.*;
 import com.google.android.material.navigation.NavigationView;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
@@ -246,51 +248,41 @@ public class HomeActivity extends AppCompatActivity {
         new Thread(() -> {
             if(threadFlag){
                 try {
-
-
                     //도시이름 받아오기
                     Connector.subscribe("userInfo", "cityName");
                     Connector.publish("userInfo", "cityName");
-                    city = Connector.getLatestMessage("userInfo", "cityName");
-                    Log.i("city", city);
-                    String decodedCity = decodeUnicode(city);
-                    Log.i("decode", decodedCity);
-
+                    Connector.subscribe("userInfo", "weather");
                     Connector.publish("userInfo", "weather");
 
-//                    //날씨 정보 받아오기
-//                    Connector.subscribe("userInfo", "weather");
-//                    Connector.publish("userInfo", "weather");
-//                    String weather = Connector.getLatestMessage("userInfo", "weather");
-//                    System.out.println(weather);
-//
-//                    //날씨 코드 받아오기
-//                    Connector.subscribe("userInfo","weatherID");
-//                    Connector.publish("userInfo","weatherID");
-//                    weatherID = Connector.getLatestMessage("userInfo","weatherID");
-//                    int w_ID = Integer.parseInt(weatherID);
-//
-//                    //현제 온도 받아오기
-//                    Connector.subscribe("userInfo","temp");
-//                    Connector.publish("userInfo","temp");
-//                    temper = Connector.getLatestMessage("userInfo","temp");
-//                    String temp_now = temper+"°C";
+                    Thread.sleep(200);
 
-                    runOnUiThread(() -> cityName.setText(decodedCity));
-//
-//                    if(w_ID < 600 && w_ID >= 200){
-//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
-//                    } else if (w_ID >= 600 && w_ID <700) {
-//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
-//                    } else if (w_ID > 800){
-//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
-//                    } else {
-//                        runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
-//                    }
-//
-//                    runOnUiThread(() -> temperature.setText(temp_now));
+                    city = Connector.getLatestMessage("userInfo", "cityName");
+                    String weatherCollection = Connector.getLatestMessage("userInfo", "weather");
 
-                    Thread.sleep(3000);
+                    runOnUiThread(() -> cityName.setText(city));
+
+                    if(weatherCollection != null){
+                        JsonParser jsonParser = new JsonParser();
+                        JsonObject jsonCollection = (JsonObject) jsonParser.parse(weatherCollection);
+
+                        String temper = String.valueOf(jsonCollection.get("temperature"));
+                        int weatherId = Integer.parseInt(String.valueOf(jsonCollection.get("description")));
+
+
+                        if(weatherId < 600 && weatherId >= 200){
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.rainnyday));
+                        } else if (weatherId >= 600 && weatherId <700) {
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.snowday));
+                        } else if (weatherId > 800){
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.cloudyday));
+                        } else {
+                            runOnUiThread(() -> weatherStatus.setImageResource(R.drawable.clearday));
+                        }
+
+                        runOnUiThread(() -> temperature.setText(temper));
+                    }
+
+                    Thread.sleep(30000);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

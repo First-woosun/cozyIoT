@@ -9,7 +9,6 @@
     android:background="#EFF1F0"
     tools:context=".indoorStatusConfigActivity">
 
-    <!-- 1. 뒤로가기 버튼 -->
     <TextView
         android:id="@+id/btn_back"
         android:layout_width="wrap_content"
@@ -23,7 +22,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 2. 제목 (수평 중앙 정렬) -->
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -37,19 +35,32 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- ========================= SEEKBAR 1: 온도 설정 ========================= -->
+
+    <Spinner
+        android:id="@+id/spinner_plant_select"
+        android:layout_width="151dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="24dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title" />
 
     <TextView
         android:id="@+id/tv_temp_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="32dp"
         android:text="온도 설정 (℃)"
         android:textColor="#444444"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title" />
+        app:layout_constraintTop_toBottomOf="@+id/spinner_plant_select" />
 
     <TextView
         android:id="@+id/tv_temp_value"
@@ -85,8 +96,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_temp_label" />
 
-
-    <!-- ========================= SEEKBAR 2: 습도 설정 ========================= -->
 
     <TextView
         android:id="@+id/tv_humidity_label"
@@ -134,22 +143,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_humidity_label" />
 
-    <!-- ========================= SEEKBAR 3: 일산화 탄소 농도 설정 (CO) ========================= -->
-
     <TextView
-        android:id="@+id/tv_co_label"
+        android:id="@+id/tv_air_condition_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="32dp"
-        android:text="일산화탄소 농도 설정(ppm)"
+        android:text="공기질 환기 설정(ppm)"
         android:textColor="#444444"
         android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sb_humidity" />
+        app:layout_constraintTop_toBottomOf="@+id/sb_lux" />
 
     <TextView
-        android:id="@+id/tv_co_value"
+        android:id="@+id/tv_air_condition_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="24dp"
@@ -157,7 +164,7 @@
         android:textColor="#000000"
         android:textSize="18sp"
         android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@+id/tv_co_label"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tv_air_condition_label"
         app:layout_constraintEnd_toEndOf="parent"
         tools:text="10" />
 
@@ -179,10 +186,53 @@
 
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_co_label" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_air_condition_label" />
 
+    <TextView
+        android:id="@+id/tv_lux_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
+        android:text="실내 조도 설정(lux)"
+        android:textColor="#444444"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sb_humidity" />
 
-    <!-- ========================= 4. Save 버튼 추가 ========================= -->
+    <TextView
+        android:id="@+id/tv_lux_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:text="10"
+        android:textColor="#000000"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintBaseline_toBaselineOf="@+id/tv_lux_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="30" />
+
+    <SeekBar
+        android:id="@+id/sb_lux"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="12dp"
+        android:min="0"
+        android:max="100"
+        android:progress="30"
+        android:progressDrawable="@drawable/progress_drawable_lux"
+        android:thumb="@drawable/thumb"
+        android:thumbTint="#dfdf01"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_lux_label" />
+
     <TextView
         android:id="@+id/btn_save"
         android:layout_width="0dp"
@@ -201,7 +251,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
