@@ -142,7 +142,7 @@ public class SynchronizedMqttConnector {
     public void autoMotorRequestPublish(String message) {
         try {
             if (mqttClient != null && mqttClient.isConnected()) {
-                String finalTopic = "auto_motor_request/";
+                String finalTopic = "pico/auto_run";
                 String finalMessage = this.username+","+message;
                 mqttClient.publish(finalTopic, new MqttMessage(finalMessage.getBytes()));
                 Log.i(TAG, "Message published: " + message);

@@ -85,10 +85,6 @@ public class HomeActivity extends AppCompatActivity {
         preferences = getSharedPreferences("UserInfo", MODE_PRIVATE);
         location = getSharedPreferences("location_prefs", MODE_PRIVATE);
 
-//        city = location.getString("cityName", "");
-//        latitude = location.getFloat("latitude", 0f);
-//        longtitude = location.getFloat("longtitude", 0f);
-
         //계정 유형에 따른 데이터 load
         if(adminFlag){
             Address = "218.49.196.80:1883";
@@ -104,27 +100,6 @@ public class HomeActivity extends AppCompatActivity {
 
         loadWeatherAndCityName();
 
-//        if(!location.getAll().isEmpty()){
-//            city = location.getString("cityName", "");
-//            latitude = location.getFloat("latitude", 0f);
-//            longtitude = location.getFloat("longtitude", 0f);
-//            cityName.setText(city);
-//
-//            loadWeatherFromSavedLocation(latitude, longtitude);
-//            city = homeConnector.callData("cityName");
-//            latitude = Float.parseFloat(homeConnector.callData("latitude"));
-//            longitude = Float.parseFloat(homeConnector.callData("longitude"));
-//
-//            loadWeatherFromSavedLocation(latitude, longitude);
-//        } else {
-//            cityName.setText("???");
-//            weatherStatus.setVisibility(INVISIBLE);
-//            temperature.setText("0°C");
-//        }
-
-//        homeConnector = new MqttConnector(Address, Name, Password);
-//        machineAddBtn = findViewById(R.id.btn_add_item);
-
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         Type type = new TypeToken<List<machineData>>() {}.getType();
@@ -139,6 +114,7 @@ public class HomeActivity extends AppCompatActivity {
             machineDataList = new ArrayList<>();
             machineDataList.add(new machineData("window")); // 기본값
         }
+
         // 모듈이름 받아와서 모듈 이름으로 추가하는 방식으로
         machineDataAdapter = new machineDataAdapter(HomeActivity.this, adminFlag, machineDataList, Connector);
         recyclerView.setAdapter(machineDataAdapter);
@@ -161,9 +137,6 @@ public class HomeActivity extends AppCompatActivity {
         sidebarBtn = findViewById(R.id.btn_sidebar);
         drawerLayout = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.navigation_view);
-//        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-
-//        setSupportActionBar(toolbar);
 
         toggle = new ActionBarDrawerToggle(
                 this,
@@ -199,6 +172,7 @@ public class HomeActivity extends AppCompatActivity {
             drawerLayout.closeDrawer(GravityCompat.END);
             return true;
         });
+
         navLogout = findViewById(R.id.nav_logout)   ;
         navLogout.setOnClickListener(v -> {
             SharedPreferences.Editor editor = preferences.edit();
@@ -259,7 +233,7 @@ public class HomeActivity extends AppCompatActivity {
                     city = Connector.getLatestMessage("userInfo", "cityName");
                     String weatherCollection = Connector.getLatestMessage("userInfo", "weather");
 
-                    runOnUiThread(() -> cityName.setText(city));
+                    runOnUiThread(() -> cityName.setText(removeDoubleQuotes(city)));
 
                     if(weatherCollection != null){
                         JsonParser jsonParser = new JsonParser();
@@ -290,26 +264,20 @@ public class HomeActivity extends AppCompatActivity {
         }).start();
     }
 
-    public static String decodeUnicode(String unicodeStr) {
-        StringBuilder sb = new StringBuilder();
-        Pattern pattern = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        Matcher matcher = pattern.matcher(unicodeStr);
-
-        int lastEnd = 0;
-        while (matcher.find()) {
-            // 매치되지 않은 일반 문자 처리
-            sb.append(unicodeStr, lastEnd, matcher.start());
-
-            // 16진수를 문자로 변환
-            int code = Integer.parseInt(matcher.group(1), 16);
-            sb.append((char) code);
-
-            lastEnd = matcher.end();
+    public static String removeDoubleQuotes(String str) {
+        // 1. null이거나 빈 문자열, 또는 길이가 1 이하라면(쌍따옴표 2개가 못들어감)
+        //    원본 그대로 반환합니다.
+        if (str == null || str.length() < 2) {
+            return str;
         }
-        sb.append(unicodeStr.substring(lastEnd));
-        sb.deleteCharAt(0);
-        sb.deleteCharAt(sb.length()-1);
 
-        return sb.toString();
+        // 2. 문자열이 쌍따옴표로 시작하고(startsWith) 그리고(&&) 쌍따옴표로 끝나는지(endsWith) 확인합니다.
+        if (str.startsWith("\"") && str.endsWith("\"")) {
+            // 3. 양쪽 끝 2개 문자를 제외한 나머지(1번 인덱스부터, 마지막 인덱스 전까지)를 반환합니다.
+            return str.substring(1, str.length() - 1);
+        }
+
+        // 4. 위의 조건에 맞지 않으면 원본 문자열을 그대로 반환합니다.
+        return str;
     }
 }

@@ -27,7 +27,8 @@ public class foreGroundService extends Service {
     private static String mq_135;  // 공기질;
     private static String temp; // 온도
     private static String hum;  // 습도
-    private static String bh1750;     // 광량
+    private static String bh1750;// 광량
+    private static String rain;
 
     private static final String TAG = "CozyIOT FOREGROUND";
 
@@ -96,31 +97,61 @@ public class foreGroundService extends Service {
                     hum = connector.getLatestMessage("pico", "hum");
                     mq_135 = connector.getLatestMessage("pico", "mq_135");
                     bh1750 = connector.getLatestMessage("pico", "bh1750");
+                    rain = connector.getLatestMessage("pico", "rain");
+
                     windowStatusNow = connector.getLatestMessage("pico", "window_status");
 
                     if(!windowStatusApp.equals(windowStatusNow)){
-                        if(windowStatusNow.equals("Open")){
-                            triggerAlertNotification("창문 열음", "창문을 개방했습니다.");
+                        if(windowStatusNow.equals("Open") && windowStatusApp.equals("Close")){
+                            triggerAlertNotification("창문 개방", "창문을 개방했습니다.");
                             windowStatusApp = windowStatusNow;
-                        } else if (windowStatusNow.equals("Close")) {
-                            triggerAlertNotification("창문 닫음", "창문을 닫았습니다.");
+                        } else if (windowStatusNow.equals("Close") && windowStatusApp.equals("Open")) {
+                            triggerAlertNotification("창문 폐쇄", "창문을 폐쇄했습니다.");
                             windowStatusApp = windowStatusNow;
                         }
                     }
 
-                    // 알림 조건 체크 (예: mq_135 > 300)
                     if (!mq_135.isEmpty()) {
                         try {
-                            int airValue = Integer.parseInt(mq_135);
-                            if (airValue > 300) {
-                                triggerAlertNotification("공기질 경고!", "공기질이 나빠졌습니다. 환기가 필요합니다. (현재 공기질 :"+airValue+")");
+                            long airValue = Long.parseLong(mq_135);
+                            if (airValue >= 20000.0) {
+                                triggerAlertNotification("공기질 경고!", "공기질 나쁨. 환기가 필요합니다. (현재 공기질 :"+airValue+")");
+                            } else if (airValue >= 35000.0 ){
+                                triggerAlertNotification("공기질 경고!", "공기질 매우 나쁨. 환기가 필요합니다. (현재 공기질 :"+airValue+")");
                             }
                         } catch (NumberFormatException e) {
                             Log.e(TAG, "mq_135 파싱 오류: " + mq_135);
+                        } catch (Exception e){
+                            Log.e(TAG, "에러 발생");
+                            e.printStackTrace();
                         }
                     }
 
-                    Thread.sleep(300000); // 5초마다 측정
+                    if (!hum.isEmpty()){
+                        try{
+                            float humValue = Float.parseFloat(hum);
+                            if(humValue >= 60){
+                                triggerAlertNotification("습도 경고", "실내가 습합니다. 환기가 필요합니다. (현재 습도 : )"+humValue+")");
+                            }
+                        } catch (Exception e){
+                            Log.e(TAG, "에러 발생");
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (!rain.isEmpty()){
+                        try{
+                            float rainValue = Float.parseFloat(rain);
+                            if(rainValue > 0.5){
+                                triggerAlertNotification("강우 감지", "강우가 감지되었습니다. 창문은 닫는것을 추천합니다.");
+                            }
+                        } catch (Exception e){
+                            Log.e(TAG, "에러 발생");
+                            e.printStackTrace();
+                        }
+                    }
+
+                    Thread.sleep(300000); // 5분마다 측정
 
                 } catch (Exception e) {
                     e.printStackTrace();

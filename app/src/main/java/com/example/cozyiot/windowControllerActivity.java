@@ -73,12 +73,15 @@ public class windowControllerActivity extends AppCompatActivity {
         connector.subscribe("pico", "window_status");
         connector.publish("pico", "window_status");
         connector.subscribe("pico", "motor_status");
+        connector.subscribe("pico", "auto_run");
+        connector.publish("pico", "auto_run");
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         windowStatus = connector.getLatestMessage("pico", "window_status");
+        isAuto = connector.getLatestMessage("pico", "auto_run");
         Log.i("status", windowStatus);
 
         if(windowStatus.equals("\"Close\"")){
@@ -92,6 +95,8 @@ public class windowControllerActivity extends AppCompatActivity {
             }
         }
 
+        autoSwitch.setChecked(isAuto.equals("open"));
+
         //창문 자동 제어
         autoSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -100,13 +105,10 @@ public class windowControllerActivity extends AppCompatActivity {
                 serviceIntent.putExtra("windowStatus", windowStatus);
                 if(isChecked){
                     connector.autoMotorRequestPublish("true");
-//                    multiThreadRun = false;
                     startService(serviceIntent);
                 }else{
                     connector.autoMotorRequestPublish("false");
                     stopService(serviceIntent);
-//                    startHuminityThread();
-                    Log.d("manual", "conncet");
                 }
             }
         });

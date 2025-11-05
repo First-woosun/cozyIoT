@@ -127,11 +127,7 @@ public class machineDataAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     autoFlag = connector.getLatestMessage("pico", "auto_run");
                 }
             }
-            if(autoFlag.equals("true")){
-                machineHolder.deviceSwitch.setChecked(true);
-            } else {
-                machineHolder.deviceSwitch.setChecked(false);
-            }
+            machineHolder.deviceSwitch.setChecked(autoFlag.equals("\"true\""));
 
 //            String autoFlag;
 //            if(connector.callData("pico","auto_run").equals("success")){
